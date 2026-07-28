@@ -1,0 +1,6 @@
+{
+  "name": "SEARCH, SOCIAL & SYSTEMS",
+  "description": "Single-page landing page and companion portal for Search, Social & Systems book by Arun Gowtham Prabhudas, featuring interactive chapter roadmaps, UPI payments, review search, and reader blueprints.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

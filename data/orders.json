@@ -1,0 +1,60 @@
+[
+  {
+    "orderId": "SSS-89241",
+    "trackingId": "IN-EXP-88491204",
+    "createdAt": "2026-07-28T02:00:00.000Z",
+    "item": "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
+    "amount": 799,
+    "originalAmount": 1299,
+    "discount": "40%",
+    "shipping": "FREE Express Shipping",
+    "status": "DISPATCHED",
+    "carrier": "BlueDart Express",
+    "customer": {
+      "name": "Rajesh Kumar",
+      "email": "rajesh.k@growthspark.in",
+      "phone": "9876543210",
+      "address": "102, Park View Towers, MG Road",
+      "city": "Coimbatore",
+      "state": "Tamil Nadu",
+      "pincode": "641001"
+    },
+    "payment": {
+      "method": "UPI_APP",
+      "upiApp": "Google Pay",
+      "upiId": "rajesh@okaxis",
+      "status": "SUCCESS",
+      "transactionRef": "TXN88491204"
+    },
+    "digitalAccessUrl": "/download/companion-blueprint-kit-SSS-89241.pdf"
+  },
+  {
+    "orderId": "SSS-90112",
+    "trackingId": "IN-EXP-99281300",
+    "createdAt": "2026-07-27T07:00:00.000Z",
+    "item": "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
+    "amount": 799,
+    "originalAmount": 1299,
+    "discount": "40%",
+    "shipping": "FREE Express Shipping",
+    "status": "DELIVERED",
+    "carrier": "India Post Speed Post",
+    "customer": {
+      "name": "Meera Nair",
+      "email": "meera.nair@d2clabs.com",
+      "phone": "9123456789",
+      "address": "Flat 4B, Emerald Court, Indiranagar",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560038"
+    },
+    "payment": {
+      "method": "UPI_QR",
+      "upiApp": "PhonePe",
+      "upiId": "meera@ybl",
+      "status": "SUCCESS",
+      "transactionRef": "TXN98231012"
+    },
+    "digitalAccessUrl": "/download/companion-blueprint-kit-SSS-90112.pdf"
+  }
+]
