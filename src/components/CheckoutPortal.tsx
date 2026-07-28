@@ -28,6 +28,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
   const [selectedUpiApp, setSelectedUpiApp] = useState('Google Pay');
   const [customUpiId, setCustomUpiId] = useState('');
   const [upiIdVerified, setUpiIdVerified] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
   
   // Status & QR
   const [qrDataUrl, setQrDataUrl] = useState('');
@@ -36,24 +37,26 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
 
   const priceINR = siteSettings?.priceINR || BOOK_METADATA.priceINR;
+  const shippingFeeINR = siteSettings?.shippingFeeINR !== undefined ? siteSettings.shippingFeeINR : BOOK_METADATA.shippingFeeINR;
+  const totalPayable = priceINR + shippingFeeINR;
   const originalPriceINR = siteSettings?.originalPriceINR || BOOK_METADATA.originalPriceINR;
   const discountPercent = siteSettings?.discountPercent || BOOK_METADATA.discountPercent;
   const merchantUpiId = siteSettings?.upiMerchantId || 'arungowtham@upi';
   const whatsappPhone = siteSettings?.whatsappPhone || BOOK_METADATA.whatsappPhone;
 
-  const upiPayString = `upi://pay?pa=${merchantUpiId}&pn=Arun%20Gowtham&am=${priceINR}&cu=INR&tn=Search%20Social%20Systems%20Book%20Order`;
+  const upiPayString = `upi://pay?pa=${encodeURIComponent(merchantUpiId)}&pn=Arun%20Gowtham&am=${totalPayable}&cu=INR&tn=Search%20Social%20Systems%20Book%20Order`;
 
-  // Generate QR Code on mount or price change
+  // Generate QR Code dynamically whenever merchantUpiId or totalPayable changes
   useEffect(() => {
     QRCode.toDataURL(upiPayString, {
-      width: 240,
+      width: 260,
       margin: 2,
       color: {
         dark: '#1e3a8a',
         light: '#ffffff'
       }
-    }).then(url => setQrDataUrl(url)).catch(err => console.error(err));
-  }, [upiPayString]);
+    }).then(url => setQrDataUrl(url)).catch(err => console.error("QR Code gen error:", err));
+  }, [upiPayString, merchantUpiId, totalPayable]);
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(merchantUpiId);
@@ -76,6 +79,8 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
       return;
     }
 
+    const finalUtr = utrNumber.trim() || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000));
+
     setIsProcessing(true);
 
     try {
@@ -92,7 +97,8 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
           pincode,
           paymentMethod: upiMethod,
           upiId: customUpiId || merchantUpiId,
-          upiApp: selectedUpiApp
+          upiApp: selectedUpiApp,
+          transactionRef: finalUtr
         })
       });
 
@@ -120,19 +126,19 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
         trackingId: "IN-EXP-" + Math.floor(10000000 + Math.random() * 90000000),
         createdAt: new Date().toISOString(),
         item: "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
-        amount: priceINR,
+        amount: totalPayable,
         originalAmount: originalPriceINR,
         discount: `${discountPercent}%`,
-        shipping: "FREE Express Shipping",
+        shipping: shippingFeeINR > 0 ? `Express Courier (₹${shippingFeeINR})` : "FREE Express Shipping",
         status: "PENDING",
         carrier: "BlueDart Express",
         customer: { name, email, phone, address, city, pincode, state },
         payment: {
           method: upiMethod,
           upiApp: selectedUpiApp,
-          upiId: merchantUpiId,
+          upiId: customUpiId || merchantUpiId,
           status: 'SUCCESS',
-          transactionRef: 'TXN' + Date.now().toString().slice(-8)
+          transactionRef: finalUtr
         },
         digitalAccessUrl: `/download/companion-blueprint-kit.pdf`
       };
@@ -167,8 +173,8 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
             
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <span className="text-xs font-mono uppercase text-blue-700 font-bold">PRINTED PAPERBACK</span>
-              <span className="text-xs font-mono uppercase bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full font-bold">
-                EXPRESS SHIPPING: FREE
+              <span className="text-xs font-mono uppercase bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full font-bold">
+                {shippingFeeINR > 0 ? `EXPRESS COURIER: ₹${shippingFeeINR}` : 'EXPRESS SHIPPING: FREE'}
               </span>
             </div>
 
@@ -181,18 +187,25 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
               </p>
             </div>
 
-            {/* Price Box */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between shadow-inner">
-              <div>
-                <div className="text-[10px] font-mono text-slate-500 uppercase">EXCLUSIVE OFFER PRICE</div>
+            {/* Price Breakdown Box */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 shadow-inner text-xs font-mono">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Book Price:</span>
+                <span className="font-bold text-slate-900">₹{priceINR} <span className="line-through text-slate-400 font-normal text-[11px]">₹{originalPriceINR}</span></span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Express Shipping Charge:</span>
+                <span className="font-bold text-blue-700">{shippingFeeINR > 0 ? `₹${shippingFeeINR}` : 'FREE'}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center font-sans">
+                <span className="font-mono text-slate-900 font-bold uppercase text-[11px]">Total Payable:</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900 font-serif">₹{priceINR}</span>
-                  <span className="text-sm line-through text-slate-400">₹{originalPriceINR}</span>
+                  <span className="text-2xl font-black text-slate-900 font-serif">₹{totalPayable}</span>
+                  <span className="text-[11px] font-bold font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    SAVE {discountPercent}%
+                  </span>
                 </div>
               </div>
-              <span className="text-xs font-bold font-mono text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
-                SAVE {discountPercent}%
-              </span>
             </div>
 
             {/* Package Items Checklist */}
@@ -478,11 +491,29 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
 
                     {upiIdVerified && (
                       <div className="text-xs font-mono text-emerald-700 flex items-center gap-1.5 font-bold">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> UPI VPA Verified! Click Order Now to proceed.
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> UPI VPA Verified! Enter UTR below and confirm order.
                       </div>
                     )}
                   </div>
                 )}
+
+                {/* Optional UTR / Payment Ref Input for Verification */}
+                <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
+                  <label className="block text-slate-800 font-mono font-bold text-xs flex items-center justify-between">
+                    <span>UPI Transaction UTR / Ref No. (Optional / Recommended)</span>
+                    <span className="text-[10px] text-blue-700 font-normal">12-Digit Ref from GPay/PhonePe</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    placeholder="e.g. 420192837412 or leave blank to auto-generate"
+                    className="w-full px-3.5 py-2 bg-white border border-blue-300 rounded-lg text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-[11px] text-slate-600 font-sans">
+                    Entering your UTR number speeds up instant dispatch verification for courier packing.
+                  </p>
+                </div>
 
               </div>
 
@@ -499,7 +530,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
                   </span>
                 ) : (
                   <>
-                    <span>Complete Order via UPI • ₹{priceINR}</span>
+                    <span>Complete Order via UPI • ₹{totalPayable}</span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
@@ -552,7 +583,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
               </div>
               <div className="flex justify-between border-b border-slate-200 pb-2">
                 <span className="text-slate-500">Amount Paid (UPI):</span>
-                <span className="text-emerald-700 font-bold">₹{completedOrder.amount} (FREE Express Shipping)</span>
+                <span className="text-emerald-700 font-bold">₹{completedOrder.amount} ({completedOrder.shipping})</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Delivery Address:</span>

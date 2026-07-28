@@ -147,6 +147,7 @@ export default function App() {
       {isAdminModalOpen && (
         <AdminPortalModal
           onClose={() => setIsAdminModalOpen(false)}
+          onContentUpdated={fetchSettings}
           onSettingsUpdated={fetchSettings}
         />
       )}

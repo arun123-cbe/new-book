@@ -12,6 +12,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSettings }) => {
   const priceINR = siteSettings?.priceINR || BOOK_METADATA.priceINR;
+  const shippingFeeINR = siteSettings?.shippingFeeINR !== undefined ? siteSettings.shippingFeeINR : BOOK_METADATA.shippingFeeINR;
   const originalPriceINR = siteSettings?.originalPriceINR || BOOK_METADATA.originalPriceINR;
   const discountPercent = siteSettings?.discountPercent || BOOK_METADATA.discountPercent;
   const authorName = siteSettings?.authorName || BOOK_METADATA.author;
@@ -77,8 +78,8 @@ export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSett
               <span className="text-slate-300">•</span>
               <span>ISBN: <strong className="text-slate-900">{BOOK_METADATA.isbn}</strong></span>
               <span className="text-slate-300">•</span>
-              <span className="text-emerald-700 font-bold flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5 text-emerald-600" /> Free Shipping Across India
+              <span className="text-blue-700 font-bold flex items-center gap-1">
+                <Truck className="w-3.5 h-3.5 text-blue-600" /> {shippingFeeINR > 0 ? `Express Delivery Across India (₹${shippingFeeINR})` : 'Free Shipping Across India'}
               </span>
             </div>
 

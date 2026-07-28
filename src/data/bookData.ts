@@ -9,6 +9,7 @@ export const BOOK_METADATA = {
   verifiedReadersCount: 1248,
   priceINR: 799,
   originalPriceINR: 1299,
+  shippingFeeINR: 49,
   discountPercent: 40,
   isbn: '978-93-6012-665-0',
   pages: '450+',
@@ -16,7 +17,7 @@ export const BOOK_METADATA = {
   pillarsCount: 3,
   copiesShipped: '1,200+',
   format: 'Premium Monochrome Paperback',
-  shipping: 'Free Direct Shipping in India',
+  shipping: 'Express Delivery (₹49 across India)',
   whatsappPhone: '9787196806',
   whatsappUrl: 'https://wa.me/919787196806?text=Hi%20Arun,%20I%20have%20a%20question%20about%20the%20Search,%20Social%20%26%20Systems%20book!'
 };

@@ -26,6 +26,7 @@ const defaultSettings = {
   heroSubtitle: "Master Digital Marketing from Scratch with One Complete Guide",
   priceINR: 799,
   originalPriceINR: 1299,
+  shippingFeeINR: 49,
   discountPercent: 40,
   whatsappPhone: "9787196806",
   upiMerchantId: "arungowtham@upi",
@@ -284,7 +285,7 @@ Your task: Help the user understand the concepts in the book, answer questions a
 
   // Order Creation & UPI Verification API
   app.post("/api/orders/create", (req, res) => {
-    const { name, email, phone, address, city, pincode, state, paymentMethod, upiId, upiApp } = req.body;
+    const { name, email, phone, address, city, pincode, state, paymentMethod, upiId, upiApp, transactionRef } = req.body;
     
     if (!name || !email || !phone || !address || !pincode) {
       return res.status(400).json({ error: "Missing required shipping details" });
@@ -293,24 +294,28 @@ Your task: Help the user understand the concepts in the book, answer questions a
     const orderId = "SSS-" + Math.floor(100000 + Math.random() * 900000);
     const trackingId = "IN-EXP-" + Math.floor(10000000 + Math.random() * 90000000);
 
+    const bookPrice = Number(siteSettings.priceINR) || 799;
+    const shippingFee = siteSettings.shippingFeeINR !== undefined ? Number(siteSettings.shippingFeeINR) : 49;
+    const totalAmount = bookPrice + shippingFee;
+
     const order = {
       orderId,
       trackingId,
       createdAt: new Date().toISOString(),
       item: "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
-      amount: siteSettings.priceINR || 799,
+      amount: totalAmount,
       originalAmount: siteSettings.originalPriceINR || 1299,
       discount: `${siteSettings.discountPercent || 40}%`,
-      shipping: "FREE Express Courier",
+      shipping: shippingFee > 0 ? `Express Courier (₹${shippingFee})` : "FREE Express Courier",
       status: "PENDING",
       carrier: "BlueDart Express",
       customer: { name, email, phone, address, city, pincode, state: state || "Tamil Nadu" },
       payment: {
         method: paymentMethod || "UPI_APP",
         status: "SUCCESS",
-        upiId: upiId || siteSettings.upiMerchantId,
+        upiId: upiId || siteSettings.upiMerchantId || "arungowtham@upi",
         upiApp: upiApp || "Google Pay",
-        transactionRef: "TXN" + Date.now().toString().slice(-8)
+        transactionRef: transactionRef || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000))
       },
       digitalAccessUrl: `/download/companion-blueprint-kit-${orderId}.pdf`
     };

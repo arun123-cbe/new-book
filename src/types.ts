@@ -99,6 +99,7 @@ export interface SiteContentSettings {
   heroSubtitle?: string;
   priceINR: number;
   originalPriceINR: number;
+  shippingFeeINR?: number;
   discountPercent: number;
   whatsappPhone: string;
   upiMerchantId: string;

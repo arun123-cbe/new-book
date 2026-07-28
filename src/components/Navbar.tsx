@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const priceINR = siteSettings?.priceINR || BOOK_METADATA.priceINR;
+  const shippingFeeINR = siteSettings?.shippingFeeINR !== undefined ? siteSettings.shippingFeeINR : BOOK_METADATA.shippingFeeINR;
   const originalPriceINR = siteSettings?.originalPriceINR || BOOK_METADATA.originalPriceINR;
   const discountPercent = siteSettings?.discountPercent || BOOK_METADATA.discountPercent;
 
@@ -47,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <span className="hidden sm:inline text-slate-300">(SAVE {discountPercent}%)</span>
         <span className="mx-1">•</span>
         <span className="text-slate-200 flex items-center gap-1 font-sans">
-          <Truck className="w-3.5 h-3.5 text-blue-400" /> Free Shipping Across India
+          <Truck className="w-3.5 h-3.5 text-blue-400" /> {shippingFeeINR > 0 ? `Express Courier (₹${shippingFeeINR})` : 'Free Shipping Across India'}
         </span>
       </div>
 
