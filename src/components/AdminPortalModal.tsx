@@ -400,7 +400,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
             <form onSubmit={handleLogin} className="space-y-3">
               <input
                 type="password"
-                placeholder="Enter Passcode (e.g. admin123)"
+                placeholder="Enter Passcode"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-center text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
@@ -408,7 +408,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
 
               {passError && (
                 <div className="text-xs text-red-600 font-bold flex items-center justify-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Incorrect passcode. Try 'admin123'
+                  <AlertCircle className="w-3.5 h-3.5" /> Incorrect passcode. Please try again.
                 </div>
               )}
 
