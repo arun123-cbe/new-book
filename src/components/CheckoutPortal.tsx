@@ -41,7 +41,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
   const totalPayable = priceINR + shippingFeeINR;
   const originalPriceINR = siteSettings?.originalPriceINR || BOOK_METADATA.originalPriceINR;
   const discountPercent = siteSettings?.discountPercent || BOOK_METADATA.discountPercent;
-  const merchantUpiId = siteSettings?.upiMerchantId || 'arungowtham@upi';
+  const merchantUpiId = siteSettings?.upiMerchantId || '6374723367@ptaxis';
   const whatsappPhone = siteSettings?.whatsappPhone || BOOK_METADATA.whatsappPhone;
 
   const upiPayString = `upi://pay?pa=${encodeURIComponent(merchantUpiId)}&pn=Arun%20Gowtham&am=${totalPayable}&cu=INR&tn=Search%20Social%20Systems%20Book%20Order`;

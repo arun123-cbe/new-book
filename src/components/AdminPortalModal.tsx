@@ -21,7 +21,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
   const [passError, setPassError] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'ORDERS' | 'CONTENT'>('ORDERS');
-  const [contentSubTab, setContentSubTab] = useState<'HERO_PRICING' | 'CHAPTERS' | 'REVIEWS' | 'PERSONAS'>('HERO_PRICING');
+  const [contentSubTab, setContentSubTab] = useState<'PAYMENT_PRICING' | 'HERO_AUTHOR' | 'CHAPTERS' | 'REVIEWS' | 'PERSONAS'>('PAYMENT_PRICING');
   
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -164,15 +164,26 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
     if (e) e.preventDefault();
     setIsSavingSettings(true);
     try {
+      let rawUpi = (settings.upiMerchantId || '6374723367@ptaxis').trim();
+      // Auto-append @upi if user only entered a phone number or handle without @ symbol
+      if (rawUpi && !rawUpi.includes('@')) {
+        rawUpi = `${rawUpi}@upi`;
+      }
+
+      const numPrice = Number(settings.priceINR) || 799;
+      const numShipping = settings.shippingFeeINR !== undefined && settings.shippingFeeINR !== null && (settings.shippingFeeINR as any) !== ''
+        ? Number(settings.shippingFeeINR)
+        : 49;
+      const numOriginal = Number(settings.originalPriceINR) || 1299;
+      const calcDiscount = Math.round(((numOriginal - numPrice) / numOriginal) * 100) || 40;
+
       const cleanPayload: SiteContentSettings = {
         ...settings,
-        priceINR: Number(settings.priceINR) || 799,
-        shippingFeeINR: settings.shippingFeeINR !== undefined && settings.shippingFeeINR !== null && settings.shippingFeeINR !== ('' as any)
-          ? Number(settings.shippingFeeINR)
-          : 49,
-        originalPriceINR: Number(settings.originalPriceINR) || 1299,
-        discountPercent: Number(settings.discountPercent) || 40,
-        upiMerchantId: (settings.upiMerchantId || 'arungowtham@upi').trim(),
+        priceINR: numPrice,
+        shippingFeeINR: numShipping,
+        originalPriceINR: numOriginal,
+        discountPercent: calcDiscount,
+        upiMerchantId: rawUpi,
         whatsappPhone: (settings.whatsappPhone || '9787196806').trim(),
         chapters: (settings.chapters && settings.chapters.length > 0) ? settings.chapters : ALL_CHAPTERS,
         reviews: (settings.reviews && settings.reviews.length > 0) ? settings.reviews : REVIEWS,
@@ -188,13 +199,16 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
       if (data.success && data.settings) {
         setSettings(data.settings);
         setSaveSuccess(true);
-        setSaveMessage(`Successfully Published! Merchant UPI: ${cleanPayload.upiMerchantId} • Price: ₹${cleanPayload.priceINR} + ₹${cleanPayload.shippingFeeINR} Courier Shipping`);
-        setTimeout(() => setSaveSuccess(false), 5000);
+        setSaveMessage(`Successfully Published! Merchant UPI: ${cleanPayload.upiMerchantId} • Total Price: ₹${cleanPayload.priceINR + cleanPayload.shippingFeeINR} (Price: ₹${cleanPayload.priceINR} + Shipping: ₹${cleanPayload.shippingFeeINR})`);
+        setTimeout(() => setSaveSuccess(false), 6000);
         if (onContentUpdated) onContentUpdated();
         if (onSettingsUpdated) onSettingsUpdated();
+      } else {
+        alert("Server error: Unable to update payment settings.");
       }
     } catch (err) {
       console.error('Failed to save settings', err);
+      alert("Network error: Failed to reach server. Please try again.");
     } finally {
       setIsSavingSettings(false);
     }
@@ -594,39 +608,53 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                 {/* CMS Sub-navigation */}
                 <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-mono">
                   <button
-                    onClick={() => setContentSubTab('HERO_PRICING')}
-                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                      contentSubTab === 'HERO_PRICING' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    type="button"
+                    onClick={() => setContentSubTab('PAYMENT_PRICING')}
+                    className={`px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                      contentSubTab === 'PAYMENT_PRICING' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Hero &amp; Pricing
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-300" /> Payment &amp; Pricing Settings
                   </button>
 
                   <button
+                    type="button"
+                    onClick={() => setContentSubTab('HERO_AUTHOR')}
+                    className={`px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                      contentSubTab === 'HERO_AUTHOR' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Hero &amp; Author Info
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setContentSubTab('CHAPTERS')}
-                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                      contentSubTab === 'CHAPTERS' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    className={`px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                      contentSubTab === 'CHAPTERS' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-blue-400" /> 21 Chapters Roadmap ({chaptersList.length})
+                    <BookOpen className="w-3.5 h-3.5 text-blue-300" /> 21 Chapters Roadmap ({chaptersList.length})
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => setContentSubTab('REVIEWS')}
-                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                      contentSubTab === 'REVIEWS' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    className={`px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                      contentSubTab === 'REVIEWS' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    <Star className="w-3.5 h-3.5 text-amber-400" /> Verified Reviews ({reviewsList.length})
+                    <Star className="w-3.5 h-3.5 text-amber-300" /> Verified Reviews ({reviewsList.length})
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => setContentSubTab('PERSONAS')}
-                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                      contentSubTab === 'PERSONAS' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    className={`px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                      contentSubTab === 'PERSONAS' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 text-emerald-400" /> Target Personas ({personasList.length})
+                    <Users className="w-3.5 h-3.5 text-emerald-300" /> Target Personas ({personasList.length})
                   </button>
                 </div>
 
@@ -643,8 +671,145 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                   </div>
                 )}
 
-                {/* SUB-TAB 1: HERO, PRICING & AUTHOR */}
-                {contentSubTab === 'HERO_PRICING' && (
+                {/* SUB-TAB 1: DEDICATED PAYMENT & PRICING SETTINGS */}
+                {contentSubTab === 'PAYMENT_PRICING' && (
+                  <form onSubmit={handleSaveSettings} className="space-y-6">
+                    <div className="bg-blue-50/70 p-5 rounded-2xl border-2 border-blue-300 space-y-5 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-blue-200 pb-3 gap-3">
+                        <div>
+                          <h3 className="text-base font-black font-serif text-slate-900 flex items-center gap-2">
+                            <DollarSign className="w-5 h-5 text-emerald-600" /> Merchant UPI Payment &amp; Book Offer Pricing
+                          </h3>
+                          <p className="text-xs text-slate-600">
+                            Configure your direct receiving Merchant UPI VPA handle, offer price, shipping charge, and support phone.
+                          </p>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isSavingSettings}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50 shrink-0"
+                        >
+                          <Save className="w-4 h-4" /> Save &amp; Publish Payment Settings
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                        <div className="sm:col-span-2 p-3.5 bg-white border border-blue-300 rounded-xl space-y-1.5">
+                          <label className="block text-blue-950 font-bold font-mono text-xs flex items-center justify-between">
+                            <span>Official Merchant UPI VPA (for QR &amp; One-Tap UPI Apps) *</span>
+                            <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-normal border border-emerald-200">
+                              e.g. 6374723367@ptaxis or 9787196806@upi
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={settings.upiMerchantId || ''}
+                            onChange={(e) => setSettings({ ...settings, upiMerchantId: e.target.value })}
+                            placeholder="Enter your UPI ID e.g. 6374723367@ptaxis or 9787196806@upi"
+                            className="w-full px-4 py-3 bg-blue-50/30 border border-blue-400 rounded-lg text-blue-950 font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          />
+                          <p className="text-[11px] text-slate-500">
+                            Customer UPI payments across Google Pay, PhonePe, Paytm, and CRED will transfer directly to this VPA handle.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
+                            Offer Price (₹ INR) *
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            value={settings.priceINR !== undefined ? settings.priceINR : 799}
+                            onChange={(e) => setSettings({ ...settings, priceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
+                            Courier Shipping Charge (₹ INR) *
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            value={settings.shippingFeeINR !== undefined ? settings.shippingFeeINR : 49}
+                            onChange={(e) => setSettings({ ...settings, shippingFeeINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            placeholder="e.g. 49"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
+                            Original List Price (₹ INR) *
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            value={settings.originalPriceINR !== undefined ? settings.originalPriceINR : 1299}
+                            onChange={(e) => setSettings({ ...settings, originalPriceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
+                            Author WhatsApp Customer Support Phone *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={settings.whatsappPhone || ''}
+                            onChange={(e) => setSettings({ ...settings, whatsappPhone: e.target.value })}
+                            placeholder="e.g. 9787196806"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        {/* Live Generated QR Code Preview Box */}
+                        <div className="sm:col-span-2 p-4 bg-white border border-blue-300 rounded-xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
+                          {adminQrUrl ? (
+                            <img src={adminQrUrl} alt="Dynamic Admin UPI QR Preview" className="w-28 h-28 border-2 border-blue-600 rounded-lg p-1 bg-white shadow-sm" />
+                          ) : (
+                            <div className="w-28 h-28 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-mono text-[10px]">
+                              Loading QR...
+                            </div>
+                          )}
+                          <div className="space-y-1.5 text-xs text-slate-600 font-sans">
+                            <div className="font-mono text-blue-900 font-bold flex items-center gap-1.5 text-xs">
+                              <QrCode className="w-4 h-4 text-blue-600" /> Dynamic Live UPI QR Code Preview
+                            </div>
+                            <p className="text-[11px] leading-relaxed">
+                              This QR code updates automatically using your VPA (<strong className="text-blue-900 font-mono">{settings.upiMerchantId || '6374723367@ptaxis'}</strong>) and Total Price (<strong className="text-slate-900 font-mono">₹{(Number(settings.priceINR) || 799) + (settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49)}</strong>).
+                            </p>
+                            <a
+                              href={`upi://pay?pa=${encodeURIComponent(settings.upiMerchantId || '6374723367@ptaxis')}&pn=Arun%20Gowtham&am=${(Number(settings.priceINR) || 799) + (settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49)}&cu=INR`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-800 font-mono font-bold text-[11px] rounded-md border border-blue-200 hover:bg-blue-100"
+                            >
+                              <ExternalLink className="w-3 h-3 text-blue-600" /> Test Launch UPI App
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-2 border-t border-blue-200">
+                        <button
+                          type="submit"
+                          disabled={isSavingSettings}
+                          className="py-3 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" /> Save &amp; Publish Payment Settings
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                {/* SUB-TAB 2: HERO & AUTHOR CMS */}
+                {contentSubTab === 'HERO_AUTHOR' && (
                   <form onSubmit={handleSaveSettings} className="space-y-6">
                     <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4">
                       <h3 className="text-sm font-bold font-serif text-slate-900 flex items-center gap-2">
@@ -698,115 +863,6 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                             onChange={(e) => setSettings({ ...settings, announcementText: e.target.value })}
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-xs focus:outline-none focus:border-blue-500"
                           />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50/50 p-4 sm:p-5 rounded-2xl border border-blue-200 space-y-4 shadow-sm">
-                      <div className="flex items-center justify-between border-b border-blue-200 pb-3">
-                        <h3 className="text-sm font-bold font-serif text-slate-900 flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-emerald-600" /> Book Offer Pricing &amp; Merchant UPI Payment Settings
-                        </h3>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSaveSettings()}
-                          disabled={isSavingSettings}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
-                        >
-                          <Save className="w-3.5 h-3.5" /> Save Payment &amp; Pricing Changes
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-                        <div>
-                          <label className="block text-slate-800 font-bold font-mono mb-1">
-                            Offer Price (₹ INR) *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            value={settings.priceINR !== undefined ? settings.priceINR : 799}
-                            onChange={(e) => setSettings({ ...settings, priceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-800 font-bold font-mono mb-1">
-                            Courier Shipping Charge (₹ INR) *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            value={settings.shippingFeeINR !== undefined ? settings.shippingFeeINR : 49}
-                            onChange={(e) => setSettings({ ...settings, shippingFeeINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
-                            placeholder="e.g. 49"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-800 font-bold font-mono mb-1">
-                            Original List Price (₹ INR) *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            value={settings.originalPriceINR !== undefined ? settings.originalPriceINR : 1299}
-                            onChange={(e) => setSettings({ ...settings, originalPriceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-800 font-bold font-mono mb-1">
-                            Official Merchant UPI VPA (for Dynamic QR &amp; Apps) *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={settings.upiMerchantId || ''}
-                            onChange={(e) => setSettings({ ...settings, upiMerchantId: e.target.value })}
-                            placeholder="e.g. arungowtham@upi or 9787196806@upi"
-                            className="w-full px-3.5 py-2.5 bg-white border border-blue-300 rounded-lg text-blue-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-slate-800 font-bold font-mono mb-1">
-                            Author WhatsApp Customer Support Phone *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={settings.whatsappPhone || ''}
-                            onChange={(e) => setSettings({ ...settings, whatsappPhone: e.target.value })}
-                            placeholder="e.g. 9787196806"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        {/* Live Generated QR Code Preview Box */}
-                        <div className="sm:col-span-2 p-4 bg-white border border-blue-300 rounded-xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
-                          {adminQrUrl ? (
-                            <img src={adminQrUrl} alt="Dynamic Admin UPI QR Preview" className="w-28 h-28 border-2 border-blue-600 rounded-lg p-1 bg-white shadow-sm" />
-                          ) : (
-                            <div className="w-28 h-28 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-mono text-[10px]">
-                              Loading QR...
-                            </div>
-                          )}
-                          <div className="space-y-1 text-xs text-slate-600 font-sans">
-                            <div className="font-mono text-blue-900 font-bold flex items-center gap-1.5 text-xs">
-                              <QrCode className="w-4 h-4 text-blue-600" /> Dynamic Live UPI QR Code Preview
-                            </div>
-                            <p className="text-[11px] leading-relaxed">
-                              This QR code is generated dynamically using your entered VPA (<strong className="text-blue-900 font-mono">{settings.upiMerchantId || 'arungowtham@upi'}</strong>) and Total Price (<strong className="text-slate-900 font-mono">₹{(Number(settings.priceINR) || 799) + (settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49)}</strong>).
-                            </p>
-                            <span className="inline-block text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                              Auto-updates live as you edit UPI ID &amp; Pricing
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>

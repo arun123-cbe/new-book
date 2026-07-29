@@ -29,7 +29,7 @@ const defaultSettings = {
   shippingFeeINR: 49,
   discountPercent: 40,
   whatsappPhone: "9787196806",
-  upiMerchantId: "arungowtham@upi",
+  upiMerchantId: "6374723367@ptaxis",
   authorName: "Arun Gowtham Prabhudas",
   authorTitle: "Digital Marketing Strategist & Author",
   authorBio: "14+ years agency leader helping entrepreneurs, students, and businesses build scalable marketing engines.",
