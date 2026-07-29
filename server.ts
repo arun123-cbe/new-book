@@ -200,6 +200,9 @@ async function startServer() {
 
   // GET, PATCH, DELETE Orders Backend
   app.get("/api/admin/orders", (req, res) => {
+    // Reload orders from disk to ensure fresh data across devices
+    ordersStore = loadJson(ORDERS_FILE, ordersStore);
+
     const { status, search } = req.query;
     let filtered = [...ordersStore];
 
@@ -211,9 +214,10 @@ async function startServer() {
       const q = search.toLowerCase();
       filtered = filtered.filter(o => 
         o.orderId.toLowerCase().includes(q) ||
-        o.customer.name.toLowerCase().includes(q) ||
-        o.customer.email.toLowerCase().includes(q) ||
-        o.customer.phone.includes(q)
+        o.customer?.name?.toLowerCase()?.includes(q) ||
+        o.customer?.email?.toLowerCase()?.includes(q) ||
+        o.customer?.phone?.includes(q) ||
+        o.payment?.transactionRef?.toLowerCase()?.includes(q)
       );
     }
 
@@ -297,14 +301,25 @@ Your task: Help the user understand the concepts in the book, answer questions a
 
   // Order Creation & UPI Verification API
   app.post("/api/orders/create", (req, res) => {
-    const { name, email, phone, address, city, pincode, state, paymentMethod, upiId, upiApp, transactionRef } = req.body;
-    
-    if (!name || !email || !phone || !address || !pincode) {
-      return res.status(400).json({ error: "Missing required shipping details" });
-    }
+    // Reload latest orders from disk
+    ordersStore = loadJson(ORDERS_FILE, ordersStore);
 
-    const orderId = "SSS-" + Math.floor(100000 + Math.random() * 900000);
-    const trackingId = "IN-EXP-" + Math.floor(10000000 + Math.random() * 90000000);
+    const body = req.body || {};
+    const name = (body.name || "Valued Customer").trim();
+    const email = (body.email || "customer@order.local").trim();
+    const phone = (body.phone || "Not Provided").trim();
+    const address = (body.address || "Address requested via WhatsApp").trim();
+    const city = (body.city || "India").trim();
+    const pincode = (body.pincode || "000000").trim();
+    const state = (body.state || "Tamil Nadu").trim();
+    
+    const paymentMethod = body.paymentMethod || "UPI_QR";
+    const upiId = body.upiId || siteSettings.upiMerchantId || "6374723367@ptaxis";
+    const upiApp = body.upiApp || "UPI QR Payment";
+    const transactionRef = (body.transactionRef || "").trim() || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000));
+
+    const orderId = body.orderId || ("SSS-" + Math.floor(100000 + Math.random() * 900000));
+    const trackingId = body.trackingId || ("IN-EXP-" + Math.floor(10000000 + Math.random() * 90000000));
 
     const bookPrice = Number(siteSettings.priceINR) || 799;
     const shippingFee = siteSettings.shippingFeeINR !== undefined ? Number(siteSettings.shippingFeeINR) : 49;
@@ -313,7 +328,7 @@ Your task: Help the user understand the concepts in the book, answer questions a
     const order = {
       orderId,
       trackingId,
-      createdAt: new Date().toISOString(),
+      createdAt: body.createdAt || new Date().toISOString(),
       item: "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
       amount: totalAmount,
       originalAmount: siteSettings.originalPriceINR || 1299,
@@ -321,19 +336,23 @@ Your task: Help the user understand the concepts in the book, answer questions a
       shipping: shippingFee > 0 ? `Express Courier (₹${shippingFee})` : "FREE Express Courier",
       status: "PENDING",
       carrier: "BlueDart Express",
-      customer: { name, email, phone, address, city, pincode, state: state || "Tamil Nadu" },
+      customer: { name, email, phone, address, city, pincode, state },
       payment: {
-        method: paymentMethod || "UPI_APP",
+        method: paymentMethod,
         status: "SUCCESS",
-        upiId: upiId || siteSettings.upiMerchantId || "arungowtham@upi",
-        upiApp: upiApp || "Google Pay",
-        transactionRef: transactionRef || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000))
+        upiId,
+        upiApp,
+        transactionRef
       },
       digitalAccessUrl: `/download/companion-blueprint-kit-${orderId}.pdf`
     };
 
+    // Add to orders store at top (prevent duplicate order IDs)
+    ordersStore = ordersStore.filter(o => o.orderId !== orderId);
     ordersStore.unshift(order);
     saveJson(ORDERS_FILE, ordersStore);
+
+    console.log(`[Order Received] ${orderId} from ${name} (${phone}) - Amount ₹${totalAmount} Ref: ${transactionRef}`);
 
     return res.json({ success: true, order });
   });

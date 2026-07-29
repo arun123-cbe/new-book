@@ -142,10 +142,14 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
     }
   };
 
-  // Fetch orders when status or search query changes
+  // Fetch orders when status or search query changes with auto 5-second live polling
   useEffect(() => {
     if (isAuthenticated) {
       fetchOrders();
+      const interval = setInterval(() => {
+        fetchOrders();
+      }, 5000);
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated, statusFilter, searchQuery]);
 
@@ -523,15 +527,26 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
 
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                  <div className="relative w-full sm:w-72">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search Order ID, Name, Phone..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-blue-500"
-                    />
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search Order ID, Name, Phone..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchOrders()}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-colors shadow-xs whitespace-nowrap shrink-0"
+                      title="Refresh Live Orders from Server"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOrders ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
