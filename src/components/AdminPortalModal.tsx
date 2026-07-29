@@ -54,6 +54,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
 
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   // Authenticate handler
   const handleLogin = (e: React.FormEvent) => {
@@ -88,7 +89,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
     try {
       const res = await fetch('/api/admin/content');
       const data = await res.json();
-      if (data && (data.priceINR || data.authorName)) {
+      if (data && (data.priceINR || data.authorName || data.upiMerchantId)) {
         setSettings({
           ...data,
           chapters: (data.chapters && data.chapters.length > 0) ? data.chapters : ALL_CHAPTERS,
@@ -101,19 +102,26 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
     }
   };
 
+  // Fetch orders when status or search query changes
   useEffect(() => {
     if (isAuthenticated) {
       fetchOrders();
+    }
+  }, [isAuthenticated, statusFilter, searchQuery]);
+
+  // Fetch content settings ONLY on initial login/auth
+  useEffect(() => {
+    if (isAuthenticated) {
       fetchSettings();
     }
-  }, [isAuthenticated, activeTab, statusFilter, searchQuery]);
+  }, [isAuthenticated]);
 
   // Dynamically generate QR preview for Admin as settings change
   useEffect(() => {
     const price = Number(settings.priceINR) || 799;
     const shipping = settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49;
     const total = price + shipping;
-    const upi = settings.upiMerchantId || 'arungowtham@upi';
+    const upi = (settings.upiMerchantId || 'arungowtham@upi').trim();
     const payStr = `upi://pay?pa=${encodeURIComponent(upi)}&pn=Arun%20Gowtham&am=${total}&cu=INR&tn=Search%20Social%20Systems%20Book%20Order`;
     QRCode.toDataURL(payStr, { width: 180, margin: 1, color: { dark: '#1e3a8a', light: '#ffffff' } })
       .then(url => setAdminQrUrl(url))
@@ -156,15 +164,32 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
     if (e) e.preventDefault();
     setIsSavingSettings(true);
     try {
+      const cleanPayload: SiteContentSettings = {
+        ...settings,
+        priceINR: Number(settings.priceINR) || 799,
+        shippingFeeINR: settings.shippingFeeINR !== undefined && settings.shippingFeeINR !== null && settings.shippingFeeINR !== ('' as any)
+          ? Number(settings.shippingFeeINR)
+          : 49,
+        originalPriceINR: Number(settings.originalPriceINR) || 1299,
+        discountPercent: Number(settings.discountPercent) || 40,
+        upiMerchantId: (settings.upiMerchantId || 'arungowtham@upi').trim(),
+        whatsappPhone: (settings.whatsappPhone || '9787196806').trim(),
+        chapters: (settings.chapters && settings.chapters.length > 0) ? settings.chapters : ALL_CHAPTERS,
+        reviews: (settings.reviews && settings.reviews.length > 0) ? settings.reviews : REVIEWS,
+        personas: (settings.personas && settings.personas.length > 0) ? settings.personas : TARGET_PERSONAS
+      };
+
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(cleanPayload)
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.settings) {
+        setSettings(data.settings);
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        setSaveMessage(`Successfully Published! Merchant UPI: ${cleanPayload.upiMerchantId} • Price: ₹${cleanPayload.priceINR} + ₹${cleanPayload.shippingFeeINR} Courier Shipping`);
+        setTimeout(() => setSaveSuccess(false), 5000);
         if (onContentUpdated) onContentUpdated();
         if (onSettingsUpdated) onSettingsUpdated();
       }
@@ -607,8 +632,14 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
 
                 {/* Save Feedback Banner */}
                 {saveSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-xs font-mono font-bold flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600" /> Website content updated live!
+                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-xs font-mono font-bold flex items-center justify-between gap-2 shadow-sm animate-fade-in">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{saveMessage || 'Website payment and content settings updated live!'}</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-sans">
+                      Live Preview Synced
+                    </span>
                   </div>
                 )}
 
@@ -671,82 +702,93 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4">
-                      <h3 className="text-sm font-bold font-serif text-slate-900 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-emerald-600" /> Book Offer Pricing &amp; Merchant UPI
-                      </h3>
+                    <div className="bg-blue-50/50 p-4 sm:p-5 rounded-2xl border border-blue-200 space-y-4 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-blue-200 pb-3">
+                        <h3 className="text-sm font-bold font-serif text-slate-900 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-emerald-600" /> Book Offer Pricing &amp; Merchant UPI Payment Settings
+                        </h3>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSaveSettings()}
+                          disabled={isSavingSettings}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
+                        >
+                          <Save className="w-3.5 h-3.5" /> Save Payment &amp; Pricing Changes
+                        </button>
+                      </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                         <div>
-                          <label className="block text-slate-700 font-bold font-mono mb-1">
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
                             Offer Price (₹ INR) *
                           </label>
                           <input
                             type="number"
                             required
-                            value={settings.priceINR}
-                            onChange={(e) => setSettings({ ...settings, priceINR: Number(e.target.value) })}
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
+                            value={settings.priceINR !== undefined ? settings.priceINR : 799}
+                            onChange={(e) => setSettings({ ...settings, priceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-slate-700 font-bold font-mono mb-1">
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
                             Courier Shipping Charge (₹ INR) *
                           </label>
                           <input
                             type="number"
                             required
                             value={settings.shippingFeeINR !== undefined ? settings.shippingFeeINR : 49}
-                            onChange={(e) => setSettings({ ...settings, shippingFeeINR: Number(e.target.value) })}
+                            onChange={(e) => setSettings({ ...settings, shippingFeeINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                             placeholder="e.g. 49"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-slate-700 font-bold font-mono mb-1">
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
                             Original List Price (₹ INR) *
                           </label>
                           <input
                             type="number"
                             required
-                            value={settings.originalPriceINR}
-                            onChange={(e) => setSettings({ ...settings, originalPriceINR: Number(e.target.value) })}
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-blue-500"
+                            value={settings.originalPriceINR !== undefined ? settings.originalPriceINR : 1299}
+                            onChange={(e) => setSettings({ ...settings, originalPriceINR: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-slate-700 font-bold font-mono mb-1">
-                            Official Merchant UPI VPA (for QR &amp; One-Tap) *
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
+                            Official Merchant UPI VPA (for Dynamic QR &amp; Apps) *
                           </label>
                           <input
                             type="text"
                             required
-                            value={settings.upiMerchantId}
+                            value={settings.upiMerchantId || ''}
                             onChange={(e) => setSettings({ ...settings, upiMerchantId: e.target.value })}
                             placeholder="e.g. arungowtham@upi or 9787196806@upi"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
+                            className="w-full px-3.5 py-2.5 bg-white border border-blue-300 rounded-lg text-blue-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-slate-700 font-bold font-mono mb-1">
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-800 font-bold font-mono mb-1">
                             Author WhatsApp Customer Support Phone *
                           </label>
                           <input
                             type="text"
                             required
-                            value={settings.whatsappPhone}
+                            value={settings.whatsappPhone || ''}
                             onChange={(e) => setSettings({ ...settings, whatsappPhone: e.target.value })}
                             placeholder="e.g. 9787196806"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-blue-500"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
 
                         {/* Live Generated QR Code Preview Box */}
-                        <div className="sm:col-span-2 p-4 bg-white border border-blue-200 rounded-xl flex flex-col sm:flex-row items-center gap-4">
+                        <div className="sm:col-span-2 p-4 bg-white border border-blue-300 rounded-xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
                           {adminQrUrl ? (
                             <img src={adminQrUrl} alt="Dynamic Admin UPI QR Preview" className="w-28 h-28 border-2 border-blue-600 rounded-lg p-1 bg-white shadow-sm" />
                           ) : (
@@ -755,14 +797,14 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                             </div>
                           )}
                           <div className="space-y-1 text-xs text-slate-600 font-sans">
-                            <div className="font-mono text-blue-900 font-bold flex items-center gap-1.5">
+                            <div className="font-mono text-blue-900 font-bold flex items-center gap-1.5 text-xs">
                               <QrCode className="w-4 h-4 text-blue-600" /> Dynamic Live UPI QR Code Preview
                             </div>
                             <p className="text-[11px] leading-relaxed">
-                              This QR code is generated dynamically using your entered VPA (<strong className="text-slate-900 font-mono">{settings.upiMerchantId || 'arungowtham@upi'}</strong>) and Total Price (<strong className="text-slate-900 font-mono">₹{(Number(settings.priceINR) || 799) + (settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49)}</strong>).
+                              This QR code is generated dynamically using your entered VPA (<strong className="text-blue-900 font-mono">{settings.upiMerchantId || 'arungowtham@upi'}</strong>) and Total Price (<strong className="text-slate-900 font-mono">₹{(Number(settings.priceINR) || 799) + (settings.shippingFeeINR !== undefined ? Number(settings.shippingFeeINR) : 49)}</strong>).
                             </p>
                             <span className="inline-block text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                              Auto-updates as you edit UPI ID &amp; Pricing
+                              Auto-updates live as you edit UPI ID &amp; Pricing
                             </span>
                           </div>
                         </div>
@@ -782,7 +824,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                           <input
                             type="text"
                             required
-                            value={settings.authorName}
+                            value={settings.authorName || ''}
                             onChange={(e) => setSettings({ ...settings, authorName: e.target.value })}
                             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-bold focus:outline-none focus:border-blue-500"
                           />
@@ -806,7 +848,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                             Custom Author Photo Image URL (Optional)
                           </label>
                           <input
-                            type="url"
+                            type="text"
                             value={settings.authorImageUrl || ''}
                             onChange={(e) => setSettings({ ...settings, authorImageUrl: e.target.value })}
                             placeholder="https://example.com/author-photo.jpg (Leave empty to use high-precision portrait illustration)"
