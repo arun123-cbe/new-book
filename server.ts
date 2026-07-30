@@ -305,37 +305,42 @@ Your task: Help the user understand the concepts in the book, answer questions a
     ordersStore = loadJson(ORDERS_FILE, ordersStore);
 
     const body = req.body || {};
-    const name = (body.name || "Valued Customer").trim();
-    const email = (body.email || "customer@order.local").trim();
-    const phone = (body.phone || "Not Provided").trim();
-    const address = (body.address || "Address requested via WhatsApp").trim();
-    const city = (body.city || "India").trim();
-    const pincode = (body.pincode || "000000").trim();
-    const state = (body.state || "Tamil Nadu").trim();
     
-    const paymentMethod = body.paymentMethod || "UPI_QR";
-    const upiId = body.upiId || siteSettings.upiMerchantId || "6374723367@ptaxis";
-    const upiApp = body.upiApp || "UPI QR Payment";
-    const transactionRef = (body.transactionRef || "").trim() || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000));
+    // Safely extract customer information whether sent flat or nested
+    const cust = body.customer || {};
+    const name = (body.name || cust.name || "Valued Customer").trim();
+    const email = (body.email || cust.email || "customer@order.local").trim();
+    const phone = (body.phone || cust.phone || "Not Provided").trim();
+    const address = (body.address || cust.address || "Address provided at checkout").trim();
+    const city = (body.city || cust.city || "India").trim();
+    const pincode = (body.pincode || cust.pincode || "000000").trim();
+    const state = (body.state || cust.state || "Tamil Nadu").trim();
+
+    // Safely extract payment details
+    const pay = body.payment || {};
+    const paymentMethod = body.paymentMethod || pay.method || "UPI_QR";
+    const upiId = body.upiId || pay.upiId || siteSettings.upiMerchantId || "6374723367@ptaxis";
+    const upiApp = body.upiApp || pay.upiApp || "UPI QR Payment";
+    const transactionRef = (body.transactionRef || pay.transactionRef || "").trim() || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000));
 
     const orderId = body.orderId || ("SSS-" + Math.floor(100000 + Math.random() * 900000));
     const trackingId = body.trackingId || ("IN-EXP-" + Math.floor(10000000 + Math.random() * 90000000));
 
     const bookPrice = Number(siteSettings.priceINR) || 799;
     const shippingFee = siteSettings.shippingFeeINR !== undefined ? Number(siteSettings.shippingFeeINR) : 49;
-    const totalAmount = bookPrice + shippingFee;
+    const totalAmount = body.amount || (bookPrice + shippingFee);
 
     const order = {
       orderId,
       trackingId,
       createdAt: body.createdAt || new Date().toISOString(),
-      item: "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
+      item: body.item || "SEARCH, SOCIAL & SYSTEMS (Printed Edition)",
       amount: totalAmount,
-      originalAmount: siteSettings.originalPriceINR || 1299,
-      discount: `${siteSettings.discountPercent || 40}%`,
-      shipping: shippingFee > 0 ? `Express Courier (₹${shippingFee})` : "FREE Express Courier",
-      status: "PENDING",
-      carrier: "BlueDart Express",
+      originalAmount: body.originalAmount || siteSettings.originalPriceINR || 1299,
+      discount: body.discount || `${siteSettings.discountPercent || 40}%`,
+      shipping: body.shipping || (shippingFee > 0 ? `Express Courier (₹${shippingFee})` : "FREE Express Courier"),
+      status: body.status || "PENDING",
+      carrier: body.carrier || "BlueDart Express",
       customer: { name, email, phone, address, city, pincode, state },
       payment: {
         method: paymentMethod,
@@ -344,7 +349,7 @@ Your task: Help the user understand the concepts in the book, answer questions a
         upiApp,
         transactionRef
       },
-      digitalAccessUrl: `/download/companion-blueprint-kit-${orderId}.pdf`
+      digitalAccessUrl: body.digitalAccessUrl || `/download/companion-blueprint-kit-${orderId}.pdf`
     };
 
     // Add to orders store at top (prevent duplicate order IDs)
@@ -352,7 +357,7 @@ Your task: Help the user understand the concepts in the book, answer questions a
     ordersStore.unshift(order);
     saveJson(ORDERS_FILE, ordersStore);
 
-    console.log(`[Order Received] ${orderId} from ${name} (${phone}) - Amount ₹${totalAmount} Ref: ${transactionRef}`);
+    console.log(`[Order Saved] ${orderId} | Name: ${name} | Phone: ${phone} | Ref: ${transactionRef}`);
 
     return res.json({ success: true, order });
   });

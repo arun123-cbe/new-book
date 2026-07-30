@@ -83,28 +83,36 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
       console.error('Failed to fetch admin orders from server:', err);
     }
 
-    // Merge with LocalStorage orders as fail-safe
+    // Merge and auto-sync LocalStorage orders as fail-safe
     try {
       const localOrders: Order[] = JSON.parse(localStorage.getItem('sss_orders') || '[]');
       if (Array.isArray(localOrders) && localOrders.length > 0) {
         const existingIds = new Set(combinedOrders.map(o => o.orderId));
-        localOrders.forEach(lo => {
+        
+        for (const lo of localOrders) {
           if (!existingIds.has(lo.orderId)) {
-            // Check status & search filters
+            // Attempt auto-sync to backend server
+            fetch('/api/orders/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(lo)
+            }).catch(e => console.warn("Auto-sync local order error:", e));
+
+            // Include in combined view
             const matchesStatus = statusFilter === 'ALL' || lo.status === statusFilter;
             const q = searchQuery.toLowerCase().trim();
             const matchesSearch = !q || (
               lo.orderId.toLowerCase().includes(q) ||
-              lo.customer.name.toLowerCase().includes(q) ||
-              lo.customer.email.toLowerCase().includes(q) ||
-              lo.customer.phone.includes(q)
+              lo.customer?.name?.toLowerCase()?.includes(q) ||
+              lo.customer?.email?.toLowerCase()?.includes(q) ||
+              lo.customer?.phone?.includes(q)
             );
             if (matchesStatus && matchesSearch) {
               combinedOrders.unshift(lo);
               existingIds.add(lo.orderId);
             }
           }
-        });
+        }
       }
     } catch (err) {
       console.warn("Could not parse local orders:", err);

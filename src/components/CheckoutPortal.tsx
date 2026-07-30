@@ -107,45 +107,59 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
 
     setIsProcessing(true);
 
-    // 1. Always save to LocalStorage immediately as fail-safe guarantee
+    // 1. Send complete order payload to server
     try {
-      const existingLocal = JSON.parse(localStorage.getItem('sss_orders') || '[]');
-      localStorage.setItem('sss_orders', JSON.stringify([newOrder, ...existingLocal]));
-    } catch (err) {
-      console.warn("Could not save to local storage:", err);
-    }
+      const payload = {
+        ...newOrder,
+        name,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        pincode,
+        paymentMethod: 'UPI_QR',
+        upiId: merchantUpiId,
+        upiApp: 'UPI QR Payment',
+        transactionRef: finalUtr
+      };
 
-    // 2. Sync to backend API
-    try {
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          pincode,
-          paymentMethod: 'UPI_QR',
-          upiId: merchantUpiId,
-          upiApp: 'UPI QR Payment',
-          transactionRef: finalUtr
-        })
-      });
-
-      const data = await response.json();
-      setIsProcessing(false);
-
-      if (data.success && data.order) {
-        setCompletedOrder(data.order);
-        onOrderSuccess(data.order);
-      } else {
-        // Use local created order
-        setCompletedOrder(newOrder);
-        onOrderSuccess(newOrder);
+      let response: Response | null = null;
+      let attempts = 0;
+      while (attempts < 3 && (!response || !response.ok)) {
+        attempts++;
+        try {
+          response = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (fetchErr) {
+          console.warn(`Attempt ${attempts} failed to post order:`, fetchErr);
+          if (attempts < 3) await new Promise(r => setTimeout(r, 800));
+        }
       }
+
+      let serverOrder = newOrder;
+      if (response && response.ok) {
+        const data = await response.json();
+        if (data.success && data.order) {
+          serverOrder = data.order;
+        }
+      }
+
+      // Save synced server order to localStorage
+      try {
+        const existingLocal: Order[] = JSON.parse(localStorage.getItem('sss_orders') || '[]');
+        const filteredLocal = existingLocal.filter(o => o.orderId !== serverOrder.orderId);
+        localStorage.setItem('sss_orders', JSON.stringify([serverOrder, ...filteredLocal]));
+      } catch (err) {
+        console.warn("Could not save to local storage:", err);
+      }
+
+      setIsProcessing(false);
+      setCompletedOrder(serverOrder);
+      onOrderSuccess(serverOrder);
 
       confetti({
         particleCount: 120,
