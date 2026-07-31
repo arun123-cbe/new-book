@@ -59,7 +59,7 @@ export function initAnalytics(config: { gaMeasurementId?: string; gtmContainerId
   window.dataLayer = window.dataLayer || [];
 
   const gaId = safeConfig.gaMeasurementId?.trim() || 'G-SSSBOOK2026';
-  const gtmId = safeConfig.gtmContainerId?.trim() || 'GTM-SSS8849';
+  const gtmId = safeConfig.gtmContainerId?.trim() || 'GTM-WGBK2FTK';
   const enabled = safeConfig.enableAnalytics !== false;
 
   if (!enabled) return;

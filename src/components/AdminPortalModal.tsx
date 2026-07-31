@@ -2276,7 +2276,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                         type="text"
                         value={settings.gtmContainerId || ''}
                         onChange={(e) => setSettings({ ...settings, gtmContainerId: e.target.value })}
-                        placeholder="GTM-SSS8849"
+                        placeholder="GTM-WGBK2FTK"
                         className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       <p className="text-[11px] text-slate-500">
@@ -2296,7 +2296,7 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
 
                     <div className="space-y-2 text-[11px] overflow-x-auto text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800">
                       <code>
-                        {`<!-- Google Tag Manager Snippet -->\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','${settings.gtmContainerId || 'GTM-SSS8849'}');</script>\n\n<!-- Google Analytics 4 (gtag.js) -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=${settings.gaMeasurementId || 'G-SSSBOOK2026'}"></script>`}
+                        {`<!-- Google Tag Manager Snippet -->\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','${settings.gtmContainerId || 'GTM-WGBK2FTK'}');</script>\n\n<!-- Google Analytics 4 (gtag.js) -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=${settings.gaMeasurementId || 'G-SSSBOOK2026'}"></script>`}
                       </code>
                     </div>
                   </div>
