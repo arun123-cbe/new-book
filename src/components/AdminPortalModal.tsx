@@ -26,7 +26,7 @@ interface AdminPortalProps {
 }
 
 export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onContentUpdated, onSettingsUpdated }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [passError, setPassError] = useState(false);
 
@@ -85,7 +85,8 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
   // Authenticate handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === 'admin123' || passcode === '1234' || passcode === '') {
+    const cleanPass = passcode.trim();
+    if (cleanPass === 'admin123' || cleanPass === '1234' || cleanPass === 'sss2026' || cleanPass === '9787196806') {
       setIsAuthenticated(true);
       setPassError(false);
     } else {
@@ -836,6 +837,9 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
             <h3 className="text-lg font-bold text-slate-900 font-serif">Publisher Security Login</h3>
             <p className="text-xs text-slate-600">
               Enter admin passcode to access order fulfillment and live website CMS editing tools.
+            </p>
+            <p className="text-[11px] text-slate-500 font-mono">
+              Passcode required (e.g. <span className="font-bold text-slate-700 bg-slate-200 px-1.5 py-0.5 rounded">admin123</span>)
             </p>
 
             <form onSubmit={handleLogin} className="space-y-3">

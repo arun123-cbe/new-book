@@ -239,9 +239,9 @@ Carrier: ${order.carrier}
       console.log(`[Order Details Summary]\nOrder ID: ${order.orderId}\nName: ${order.customer?.name}\nPhone: ${order.customer?.phone}\nAddress: ${order.customer?.address}, ${order.customer?.city}\nRef: ${order.payment?.transactionRef}`);
     }
   } catch (err: any) {
-    logEntry.status = "FAILED";
+    logEntry.status = "SMTP_AUTH_OR_SEND_FAILED";
     logEntry.error = err?.message || String(err);
-    console.error(`[Order Email Error] Notification to ${targetEmail}:`, err);
+    console.warn(`[Order Email Notification Notice] Could not dispatch email to ${targetEmail}: ${err?.message || err}`);
   }
 
   notificationsLog.unshift(logEntry);
@@ -558,11 +558,11 @@ Your task: Help the user understand the concepts in the book, answer questions a
 
     // Trigger instant email notification & WhatsApp alert
     sendOrderNotificationEmail(order).catch(err => {
-      console.error("[Email Notification Dispatch Error]:", err);
+      console.warn("[Email Notification Dispatch Notice]:", err);
     });
 
     const waNoticePromise = sendOrderNotificationWhatsApp(order).catch(err => {
-      console.error("[WhatsApp Dispatch Error]:", err);
+      console.warn("[WhatsApp Dispatch Notice]:", err);
       return null;
     });
 
