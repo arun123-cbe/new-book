@@ -322,7 +322,7 @@ async function sendOrderNotificationWhatsApp(order: any) {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // CORS Middleware for custom domain support
   app.use((req, res, next) => {
@@ -359,7 +359,13 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.json({ 
+      status: "ok", 
+      backend: "Hostinger Express Server Active",
+      port: PORT,
+      ordersCount: ordersStore.length,
+      timestamp: new Date().toISOString() 
+    });
   });
 
   // GET & POST Content Settings Backend
