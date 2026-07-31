@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { BOOK_METADATA } from '../data/bookData';
 import { Order, SiteContentSettings } from '../types';
+import { saveOrderToFirebase } from '../lib/firebase';
 
 interface CheckoutPortalProps {
   onOrderSuccess: (order: Order) => void;
@@ -147,13 +148,14 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
         }
       }
 
-      // Save synced server order to localStorage
+      // Save synced server order to localStorage and Firebase Firestore
       try {
+        saveOrderToFirebase(serverOrder);
         const existingLocal: Order[] = JSON.parse(localStorage.getItem('sss_orders') || '[]');
         const filteredLocal = existingLocal.filter(o => o.orderId !== serverOrder.orderId);
         localStorage.setItem('sss_orders', JSON.stringify([serverOrder, ...filteredLocal]));
       } catch (err) {
-        console.warn("Could not save to local storage:", err);
+        console.warn("Could not save to local storage or Firebase:", err);
       }
 
       setIsProcessing(false);

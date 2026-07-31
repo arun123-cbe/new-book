@@ -15,6 +15,7 @@ import { Footer } from './components/Footer';
 import { OrderTrackModal } from './components/OrderTrackModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
 import { Chapter, Order, SiteContentSettings } from './types';
+import { subscribeToFirebaseSettings } from './lib/firebase';
 
 export default function App() {
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -38,6 +39,17 @@ export default function App() {
 
   useEffect(() => {
     fetchSettings();
+
+    // Subscribe to Firebase Firestore live settings updates
+    const unsubscribe = subscribeToFirebaseSettings((fbSettings) => {
+      if (fbSettings && typeof fbSettings === 'object') {
+        setSiteSettings(fbSettings);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const scrollToCheckout = () => {

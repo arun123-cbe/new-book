@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "orders": {
+      "title": "Order",
+      "description": "Customer book orders and fulfillment status",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "item": { "type": "string" },
+        "amount": { "type": "number" },
+        "originalAmount": { "type": "number" },
+        "discount": { "type": "string" },
+        "shipping": { "type": "string" },
+        "status": { "type": "string" },
+        "carrier": { "type": "string" },
+        "customer": { "type": "object" },
+        "payment": { "type": "object" },
+        "digitalAccessUrl": { "type": "string" }
+      },
+      "required": ["orderId", "createdAt", "amount", "status", "customer"]
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Global store content and pricing settings",
+      "type": "object",
+      "properties": {
+        "priceINR": { "type": "number" },
+        "originalPriceINR": { "type": "number" },
+        "upiMerchantId": { "type": "string" },
+        "upiName": { "type": "string" },
+        "whatsappPhone": { "type": "string text" }
+      }
+    }
+  }
+}
