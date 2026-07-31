@@ -1,16 +1,18 @@
 import React from 'react';
-import { Star, ShieldCheck, ArrowRight, CheckCircle2, Truck, Sparkles, BookOpen } from 'lucide-react';
+import { Star, ArrowRight, CheckCircle2, Truck, Sparkles, MessageSquare } from 'lucide-react';
 import { BOOK_METADATA } from '../data/bookData';
 import { BookMockup3D } from './BookMockup3D';
-import { SiteContentSettings } from '../types';
+import { TopLeadOrderForm } from './TopLeadOrderForm';
+import { Order, SiteContentSettings } from '../types';
 
 interface HeroProps {
   onBuyClick: () => void;
   onPreviewClick: () => void;
+  onOrderSuccess?: (order: Order) => void;
   siteSettings?: SiteContentSettings;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSettings }) => {
+export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, onOrderSuccess, siteSettings }) => {
   const priceINR = siteSettings?.priceINR || BOOK_METADATA.priceINR;
   const shippingFeeINR = siteSettings?.shippingFeeINR !== undefined ? siteSettings.shippingFeeINR : BOOK_METADATA.shippingFeeINR;
   const originalPriceINR = siteSettings?.originalPriceINR || BOOK_METADATA.originalPriceINR;
@@ -21,15 +23,15 @@ export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSett
   const tagline = siteSettings?.tagline || 'One Book. Endless Opportunities. Learn Digital Marketing the Right Way.';
 
   return (
-    <section className="relative pt-12 pb-20 md:py-24 bg-white text-slate-800 overflow-hidden border-b border-slate-200">
+    <section className="relative pt-8 pb-16 md:py-20 bg-white text-slate-800 overflow-hidden border-b border-slate-200">
       {/* Subtle Background Accent Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
           
-          {/* Left Column: Core Copy & CTAs */}
-          <div className="lg:col-span-7 space-y-6 text-left">
+          {/* Left Column: Core Copy & Book Highlights */}
+          <div className="lg:col-span-6 space-y-5 text-left pt-2">
             
             {/* Tagline Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-900 font-mono font-bold">
@@ -39,133 +41,108 @@ export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSett
 
             {/* Main Title Block */}
             <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight font-serif text-slate-900 uppercase leading-[1.05]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-black tracking-tight font-serif text-slate-900 uppercase leading-[1.08]">
                 {heroTitle ? (
                   heroTitle
                 ) : (
                   <>SEARCH, SOCIAL <span className="text-blue-700">&amp; SYSTEMS</span></>
                 )}
               </h1>
-              <p className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight font-sans">
+              <p className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight font-sans">
                 {heroSubtitle}
               </p>
             </div>
 
             {/* Description Paragraph */}
-            <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
               Whether you're a beginner, entrepreneur, student, or marketing professional, this book by <strong>{authorName}</strong> gives you the complete roadmap to understand, execute, and grow in digital marketing.
             </p>
 
             {/* Verified Rating Badge */}
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex items-center gap-3 py-1">
               <div className="flex items-center text-amber-500">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-amber-400" />
                 ))}
               </div>
-              <span className="text-sm font-bold text-slate-900">4.9/5 Rating</span>
-              <span className="text-xs text-slate-500 font-mono">
-                from 1,248+ verified readers, graduates, and business owners.
+              <span className="text-xs sm:text-sm font-bold text-slate-900">4.9/5 Rating</span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                from 1,248+ verified readers &amp; graduates.
               </span>
             </div>
 
-            {/* Format metadata bullet strip */}
-            <div className="py-3 px-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs font-mono text-slate-700">
-              <span className="flex items-center gap-1.5 text-slate-900 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                FORMAT: <strong className="text-slate-900">Premium Monochrome Paperback</strong>
-              </span>
-              <span className="text-slate-300">•</span>
-              <span>ISBN: <strong className="text-slate-900">{BOOK_METADATA.isbn}</strong></span>
-              <span className="text-slate-300">•</span>
-              <span className="text-blue-700 font-bold flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5 text-blue-600" /> {shippingFeeINR > 0 ? `Express Delivery Across India (₹${shippingFeeINR})` : 'Free Shipping Across India'}
-              </span>
-            </div>
+            {/* Book Cover + Specs Box */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-4">
+              <div className="w-20 h-28 flex-shrink-0 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 rounded-lg p-2 text-white flex flex-col justify-between shadow-md border border-slate-800 text-center">
+                <div className="text-[7px] font-mono tracking-widest text-blue-300 uppercase">OFFICIAL BOOK</div>
+                <div className="text-[9px] font-serif font-black leading-tight text-white uppercase">SEARCH SOCIAL SYSTEMS</div>
+                <div className="text-[7px] font-mono text-slate-400">{authorName}</div>
+              </div>
 
-            {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button
-                onClick={onBuyClick}
-                className="group relative px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-base rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <span>👉 Buy Now (₹{priceINR})</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-
-              <button
-                onClick={onPreviewClick}
-                className="px-5 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 flex items-center justify-center gap-2 transition-colors font-mono"
-              >
-                <BookOpen className="w-4 h-4 text-blue-600" /> View 21-Chapter Syllabus
-              </button>
+              <div className="space-y-1 text-xs">
+                <div className="font-bold text-slate-900 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Paperback Printed Book + Free Digital Kit
+                </div>
+                <div className="text-slate-500 font-mono text-[11px]">
+                  ISBN: {BOOK_METADATA.isbn} • 450+ Pages
+                </div>
+                <div className="text-blue-700 font-bold flex items-center gap-1 text-[11px]">
+                  <Truck className="w-3.5 h-3.5 text-blue-600" />
+                  {shippingFeeINR > 0 ? `Express Courier (₹${shippingFeeINR})` : 'FREE Express Shipping Across India'}
+                </div>
+                <div className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Dispatched within 24 Hours
+                </div>
+              </div>
             </div>
 
             {/* Key Benefits Guarantee */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-2 font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1 font-mono">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Instant Digital Companion Kit PDF Included</span>
+                <span>Instant Digital Companion Kit PDF</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>100% Direct UPI Secure Checkout</span>
+                <span>100% Direct UPI Secure Payment</span>
               </div>
             </div>
 
           </div>
 
-          {/* Right Column: 3D Interactive Book Mockup & Quick Specs */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center">
-            
-            {/* 3D Book Box */}
-            <BookMockup3D onPreviewClick={onPreviewClick} />
-
-            {/* Quick Pricing Badge */}
-            <div className="w-full max-w-sm mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-sm flex items-center justify-between text-left">
-              <div>
-                <div className="text-[10px] text-slate-500 font-mono uppercase">PAPERBACK PRICE</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900 font-serif">₹{priceINR}</span>
-                  <span className="text-sm line-through text-slate-400">₹{originalPriceINR}</span>
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 font-mono">
-                    SAVE {discountPercent}%
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={onBuyClick}
-                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                Order Copy
-              </button>
-            </div>
-
+          {/* Right Column: TOP HIGH LEAD GENERATION ORDER FORM */}
+          <div className="lg:col-span-6 w-full">
+            <TopLeadOrderForm
+              onOrderSuccess={onOrderSuccess || (() => {})}
+              siteSettings={siteSettings}
+            />
           </div>
 
         </div>
 
         {/* Quick Stats Grid Bar */}
-        <div className="mt-16 pt-8 border-t border-slate-200 grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">450+</div>
-            <div className="text-xs text-slate-600 font-mono mt-1 uppercase">Printed Pages</div>
+        <div className="mt-14 pt-8 border-t border-slate-200 grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-black text-slate-900 font-mono">450+</div>
+            <div className="text-[11px] text-slate-600 font-mono mt-0.5 uppercase">Printed Pages</div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">21</div>
-            <div className="text-xs text-slate-600 font-mono mt-1 uppercase">Expert Chapters</div>
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-black text-slate-900 font-mono">21</div>
+            <div className="text-[11px] text-slate-600 font-mono mt-0.5 uppercase">Core Topics</div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-2xl sm:text-3xl font-black text-blue-700 font-mono">3</div>
-            <div className="text-xs text-slate-600 font-mono mt-1 uppercase">Connected Pillars</div>
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-black text-blue-700 font-mono">3</div>
+            <div className="text-[11px] text-slate-600 font-mono mt-0.5 uppercase">Growth Pillars</div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">1,200+</div>
-            <div className="text-xs text-slate-600 font-mono mt-1 uppercase">Copies Shipped</div>
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-black text-slate-900 font-mono">1,200+</div>
+            <div className="text-[11px] text-slate-600 font-mono mt-0.5 uppercase">Copies Shipped</div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-xs col-span-2 md:col-span-1">
-            <div className="text-2xl sm:text-3xl font-black text-amber-600 font-mono">4.9</div>
-            <div className="text-xs text-slate-600 font-mono mt-1 uppercase">Reader Average</div>
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-xs col-span-2 md:col-span-1">
+            <div className="text-2xl font-black text-amber-600 font-mono">4.9 / 5</div>
+            <div className="text-[11px] text-slate-600 font-mono mt-0.5 uppercase">Reader Rating</div>
           </div>
         </div>
 
@@ -173,3 +150,4 @@ export const Hero: React.FC<HeroProps> = ({ onBuyClick, onPreviewClick, siteSett
     </section>
   );
 };
+

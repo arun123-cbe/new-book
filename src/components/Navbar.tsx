@@ -27,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navLinks = [
     { label: 'Why This Book', href: '#why-this-book' },
-    { label: 'Syllabus', href: '#syllabus' },
+    { label: 'Quick Order', href: '#top-lead-order' },
     { label: 'Who Should Read', href: '#target-metric' },
     { label: 'Outcomes', href: '#outcomes' },
     { label: 'Instructor', href: '#instructor' },

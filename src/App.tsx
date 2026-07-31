@@ -3,7 +3,6 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { WhyThisBook } from './components/WhyThisBook';
 import { ExpertAdvantage } from './components/ExpertAdvantage';
-import { SyllabusRoadmap } from './components/SyllabusRoadmap';
 import { UnderstandBookAI } from './components/UnderstandBookAI';
 import { TargetAudience } from './components/TargetAudience';
 import { TargetTransformation } from './components/TargetTransformation';
@@ -14,6 +13,7 @@ import { CheckoutPortal } from './components/CheckoutPortal';
 import { Footer } from './components/Footer';
 import { OrderTrackModal } from './components/OrderTrackModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
+import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { Chapter, Order, SiteContentSettings } from './types';
 import { subscribeToFirebaseSettings } from './lib/firebase';
 import { initAnalytics, trackPageView } from './lib/analytics';
@@ -63,7 +63,7 @@ export default function App() {
   }, [siteSettings]);
 
   const scrollToCheckout = () => {
-    const el = document.getElementById('buy-now');
+    const el = document.getElementById('top-lead-order') || document.getElementById('buy-now');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
@@ -100,13 +100,14 @@ export default function App() {
 
       {/* Main Single Page Sections */}
       <main>
-        {/* Hero Section */}
+        {/* Hero Section with Top High Lead Generation Order Form */}
         <Hero
           onBuyClick={scrollToCheckout}
           onPreviewClick={() => {
-            const el = document.getElementById('syllabus');
+            const el = document.getElementById('understand-book');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
+          onOrderSuccess={(order) => setLastOrder(order)}
           siteSettings={siteSettings}
         />
 
@@ -115,13 +116,6 @@ export default function App() {
 
         {/* The Expert Advantage - Why This Book Is Different */}
         <ExpertAdvantage />
-
-        {/* Master Syllabus Roadmap & 21 Chapter Blueprint Inspector */}
-        <SyllabusRoadmap
-          onBuyClick={scrollToCheckout}
-          onSelectChapterForAi={scrollToAi}
-          siteSettings={siteSettings}
-        />
 
         {/* Understand the Book with Gemini AI */}
         <UnderstandBookAI initialChapter={selectedAiChapter} />
@@ -173,6 +167,9 @@ export default function App() {
           onSettingsUpdated={fetchSettings}
         />
       )}
+
+      {/* Floating WhatsApp Chat Bot Widget */}
+      <WhatsAppWidget phoneNumber="9787196806" />
 
     </div>
   );
