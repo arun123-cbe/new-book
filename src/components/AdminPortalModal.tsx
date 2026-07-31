@@ -843,6 +843,107 @@ export const AdminPortalModal: React.FC<AdminPortalProps> = ({ onClose, onConten
                           />
                         </div>
 
+                        <div className="sm:col-span-2 bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 space-y-3">
+                          <div>
+                            <label className="block text-emerald-950 font-bold font-mono text-xs mb-1 flex items-center gap-1.5">
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp Order Alert Settings
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Admin WhatsApp Mobile No. *</label>
+                                <input
+                                  type="text"
+                                  value={settings.whatsappPhone || '9787196806'}
+                                  onChange={(e) => setSettings({ ...settings, whatsappPhone: e.target.value })}
+                                  placeholder="e.g. 9787196806"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">CallMeBot Free API Key (Optional Auto-Bot)</label>
+                                <input
+                                  type="text"
+                                  value={settings.callmebotApiKey || ''}
+                                  onChange={(e) => setSettings({ ...settings, callmebotApiKey: e.target.value })}
+                                  placeholder="e.g. 123456 (from CallMeBot)"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-emerald-900 mt-2 leading-relaxed">
+                              ✅ <strong>Instant Direct Link:</strong> When a customer orders, an instant WhatsApp message link pre-formatted with order details is automatically generated for <strong>+{settings.whatsappPhone || '9787196806'}</strong>.<br/>
+                              🤖 <strong>Automated Free Bot:</strong> Get a free API key in 10 seconds from CallMeBot (send message on WhatsApp to +34 644 44 44 19) to receive direct automated WhatsApp alerts on your phone!
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="sm:col-span-2 bg-blue-50/80 p-3.5 rounded-xl border border-blue-200 space-y-3">
+                          <div>
+                            <label className="block text-blue-950 font-bold font-mono text-xs mb-1 flex items-center gap-1.5">
+                              <Mail className="w-3.5 h-3.5 text-blue-600" /> Instant Order Alert Notification Email Address *
+                            </label>
+                            <input
+                              type="email"
+                              required
+                              value={settings.notificationEmail || 'arunprabhu@cbeschoolofdigitalgrowth.in'}
+                              onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
+                              placeholder="e.g. arunprabhu@cbeschoolofdigitalgrowth.in"
+                              className="w-full px-3.5 py-2 bg-white border border-blue-300 rounded-lg text-slate-900 font-mono text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <p className="text-[11px] text-blue-800 mt-1">
+                              An instant notification alert for every new order placed will be dispatched to <strong>{settings.notificationEmail || 'arunprabhu@cbeschoolofdigitalgrowth.in'}</strong> with complete shipping and payment details.
+                            </p>
+                          </div>
+
+                          <div className="border-t border-blue-200/80 pt-3">
+                            <span className="text-xs font-bold text-blue-950 block mb-2 font-mono">
+                              ✉️ Hostinger Email SMTP Credentials (Optional - for direct email dispatch)
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">SMTP Server Host</label>
+                                <input
+                                  type="text"
+                                  value={settings.smtpHost || 'smtp.hostinger.com'}
+                                  onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                                  placeholder="smtp.hostinger.com"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">SMTP Port</label>
+                                <input
+                                  type="text"
+                                  value={settings.smtpPort || '465'}
+                                  onChange={(e) => setSettings({ ...settings, smtpPort: e.target.value })}
+                                  placeholder="465 or 587"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Hostinger Email / User</label>
+                                <input
+                                  type="text"
+                                  value={settings.smtpUser || ''}
+                                  onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                                  placeholder="arunprabhu@cbeschoolofdigitalgrowth.in"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Email Password</label>
+                                <input
+                                  type="password"
+                                  value={settings.smtpPass || ''}
+                                  onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
+                                  placeholder="Your Hostinger Email Password"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-slate-900 font-mono text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Live Generated QR Code Preview Box */}
                         <div className="sm:col-span-2 p-4 bg-white border border-blue-300 rounded-xl flex flex-col sm:flex-row items-center gap-4 shadow-sm">
                           {adminQrUrl ? (

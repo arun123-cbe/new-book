@@ -571,12 +571,20 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
             {/* WhatsApp Confirmation Dispatch Button */}
             <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <a
-                href={`https://wa.me/91${whatsappPhone}?text=Hi%20Arun,%20I%20just%20ordered%20Search,%20Social%20%26%20Systems!%20My%20Order%20ID%20is%20${completedOrder.orderId}.`}
+                href={`https://wa.me/91${whatsappPhone}?text=${encodeURIComponent(
+                  `🛒 *NEW BOOK ORDER CONFIRMATION*\n\n` +
+                  `*Order ID:* ${completedOrder.orderId}\n` +
+                  `*Name:* ${completedOrder.customer.name}\n` +
+                  `*Phone:* ${completedOrder.customer.phone}\n` +
+                  `*Address:* ${completedOrder.customer.address}, ${completedOrder.customer.city} - ${completedOrder.customer.pincode}\n` +
+                  `*Amount Paid:* ₹${completedOrder.amount}\n` +
+                  `*UTR / Ref:* ${completedOrder.payment.transactionRef || 'N/A'}`
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors font-mono shadow-md"
               >
-                <MessageSquare className="w-4 h-4" /> WhatsApp Author Confirmation ({whatsappPhone})
+                <MessageSquare className="w-4 h-4" /> Send Instant WhatsApp Order Alert to {whatsappPhone}
               </a>
 
               <button

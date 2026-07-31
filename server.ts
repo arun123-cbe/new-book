@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE = path.join(DATA_DIR, "siteContent.json");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, "notifications.json");
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -30,6 +32,7 @@ const defaultSettings = {
   discountPercent: 40,
   whatsappPhone: "9787196806",
   upiMerchantId: "6374723367@ptaxis",
+  notificationEmail: "arunprabhu@cbeschoolofdigitalgrowth.in",
   authorName: "Arun Gowtham Prabhudas",
   authorTitle: "Digital Marketing Strategist & Author",
   authorBio: "14+ years agency leader helping entrepreneurs, students, and businesses build scalable marketing engines.",
@@ -128,6 +131,186 @@ function saveJson(filepath: string, data: any) {
 
 let siteSettings: any = loadJson(CONTENT_FILE, defaultSettings);
 let ordersStore: any[] = loadJson(ORDERS_FILE, defaultOrders);
+let notificationsLog: any[] = loadJson(NOTIFICATIONS_FILE, []);
+
+async function sendOrderNotificationEmail(order: any) {
+  const targetEmail = process.env.NOTIFICATION_EMAIL || siteSettings.notificationEmail || "arunprabhu@cbeschoolofdigitalgrowth.in";
+  const subject = `🛒 [NEW BOOK ORDER] ${order.orderId} - ₹${order.amount} from ${order.customer?.name || "Customer"}`;
+
+  const textBody = `
+NEW BOOK ORDER RECEIVED!
+
+Order ID: ${order.orderId}
+Tracking ID: ${order.trackingId}
+Date: ${order.createdAt}
+Total Amount: ₹${order.amount}
+Payment Ref / UTR: ${order.payment?.transactionRef || "N/A"}
+Payment Method: ${order.payment?.method || "UPI_QR"}
+
+CUSTOMER SHIPPING DETAILS:
+---------------------------
+Name: ${order.customer?.name}
+Phone: ${order.customer?.phone}
+Email: ${order.customer?.email}
+Address: ${order.customer?.address}, ${order.customer?.city}, ${order.customer?.state} - ${order.customer?.pincode}
+
+Item: ${order.item}
+Carrier: ${order.carrier}
+`;
+
+  const htmlBody = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+  <div style="background-color: #1e3a8a; color: #ffffff; padding: 18px 24px; border-radius: 8px; text-align: center;">
+    <h2 style="margin: 0; font-size: 20px;">🛒 New Book Order Received!</h2>
+    <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9; font-family: monospace;">Search, Social & Systems Order Notification</p>
+  </div>
+  
+  <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <p style="margin: 4px 0; font-size: 15px;"><strong>Order ID:</strong> <span style="color: #2563eb; font-family: monospace; font-weight: bold;">${order.orderId}</span></p>
+    <p style="margin: 4px 0; font-size: 15px;"><strong>Amount Paid:</strong> <span style="color: #16a34a; font-weight: bold;">₹${order.amount}</span></p>
+    <p style="margin: 4px 0;"><strong>UTR / Payment Ref:</strong> <span style="font-family: monospace; font-weight: bold;">${order.payment?.transactionRef || "N/A"}</span></p>
+    <p style="margin: 4px 0;"><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString('en-IN')}</p>
+  </div>
+
+  <h3 style="color: #0f172a; margin-top: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; font-size: 15px;">📦 Customer Shipping Details</h3>
+  <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 14px;">
+    <tr><td style="padding: 6px 0; font-weight: bold; width: 120px; color: #475569;">Name:</td><td style="font-weight: bold; color: #0f172a;">${order.customer?.name}</td></tr>
+    <tr><td style="padding: 6px 0; font-weight: bold; color: #475569;">Phone:</td><td><a href="tel:${order.customer?.phone}" style="color: #2563eb; font-weight: bold;">${order.customer?.phone}</a></td></tr>
+    <tr><td style="padding: 6px 0; font-weight: bold; color: #475569;">Email:</td><td><a href="mailto:${order.customer?.email}" style="color: #2563eb;">${order.customer?.email}</a></td></tr>
+    <tr><td style="padding: 6px 0; font-weight: bold; color: #475569;">Address:</td><td style="color: #334155;">${order.customer?.address}, ${order.customer?.city}, ${order.customer?.state} - <strong>${order.customer?.pincode}</strong></td></tr>
+  </table>
+
+  <h3 style="color: #0f172a; margin-top: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; font-size: 15px;">📋 Item & Carrier</h3>
+  <p style="margin: 4px 0; font-size: 14px;"><strong>Item:</strong> ${order.item}</p>
+  <p style="margin: 4px 0; font-size: 14px;"><strong>Carrier:</strong> ${order.carrier} (${order.trackingId})</p>
+
+  <div style="margin-top: 24px; text-align: center;">
+    <a href="https://wa.me/91${order.customer?.phone?.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(order.customer?.name || '')},%20thank%20you%20for%20ordering%20Search,%20Social%20%26%20Systems!%20Your%20Order%20ID%20is%20${order.orderId}." 
+       style="display: inline-block; background-color: #25d366; color: #ffffff; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
+      💬 Open Customer WhatsApp Chat
+    </a>
+  </div>
+</div>
+`;
+
+  const logEntry: any = {
+    id: "NOTIF-" + Date.now(),
+    orderId: order.orderId,
+    targetEmail,
+    sentAt: new Date().toISOString(),
+    status: "DISPATCHED",
+    subject
+  };
+
+  try {
+    const smtpHost = process.env.SMTP_HOST || siteSettings.smtpHost;
+    const smtpUser = process.env.SMTP_USER || siteSettings.smtpUser;
+    const smtpPass = process.env.SMTP_PASS || siteSettings.smtpPass;
+    const smtpPort = Number(process.env.SMTP_PORT || siteSettings.smtpPort || 465);
+
+    if (smtpHost && smtpUser && smtpPass) {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      await transporter.sendMail({
+        from: `"Search Social Systems Orders" <${smtpUser}>`,
+        to: targetEmail,
+        subject,
+        text: textBody,
+        html: htmlBody
+      });
+      logEntry.status = "EMAIL_DELIVERED_SMTP";
+      console.log(`[Order Email Sent] Successfully sent order alert to ${targetEmail} via SMTP.`);
+    } else {
+      logEntry.status = "LOGGED_ALERT_READY";
+      console.log(`[Order Notification Triggered] Target: ${targetEmail}`);
+      console.log(`[Order Details Summary]\nOrder ID: ${order.orderId}\nName: ${order.customer?.name}\nPhone: ${order.customer?.phone}\nAddress: ${order.customer?.address}, ${order.customer?.city}\nRef: ${order.payment?.transactionRef}`);
+    }
+  } catch (err: any) {
+    logEntry.status = "FAILED";
+    logEntry.error = err?.message || String(err);
+    console.error(`[Order Email Error] Notification to ${targetEmail}:`, err);
+  }
+
+  notificationsLog.unshift(logEntry);
+  if (notificationsLog.length > 100) notificationsLog = notificationsLog.slice(0, 100);
+  saveJson(NOTIFICATIONS_FILE, notificationsLog);
+}
+
+async function sendOrderNotificationWhatsApp(order: any) {
+  const targetPhone = (process.env.WHATSAPP_ADMIN_PHONE || siteSettings.whatsappPhone || "9787196806").replace(/\D/g, '');
+  const cleanPhone = targetPhone.length === 10 ? `91${targetPhone}` : targetPhone;
+
+  const waText = `🛒 *NEW BOOK ORDER RECEIVED!*
+
+*Order ID:* ${order.orderId}
+*Amount Paid:* ₹${order.amount} (${order.shipping || 'UPI'})
+*UTR / Ref:* ${order.payment?.transactionRef || 'N/A'}
+*Date:* ${new Date(order.createdAt).toLocaleString('en-IN')}
+
+👤 *CUSTOMER SHIPPING DETAILS:*
+• *Name:* ${order.customer?.name}
+• *Phone:* ${order.customer?.phone}
+• *Email:* ${order.customer?.email}
+• *Address:* ${order.customer?.address}, ${order.customer?.city}, ${order.customer?.state} - ${order.customer?.pincode}
+
+📦 *ITEM:* ${order.item}
+🚚 *CARRIER:* ${order.carrier} (${order.trackingId})`;
+
+  const encodedText = encodeURIComponent(waText);
+  const directWaUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+
+  const logEntry: any = {
+    id: "WA-NOTIF-" + Date.now(),
+    orderId: order.orderId,
+    targetPhone: cleanPhone,
+    sentAt: new Date().toISOString(),
+    status: "DISPATCH_READY",
+    directWaUrl,
+    messagePreview: waText
+  };
+
+  try {
+    // 1. CallMeBot Free WhatsApp API (if callmebotApiKey configured)
+    const callmebotApiKey = process.env.CALLMEBOT_API_KEY || siteSettings.callmebotApiKey;
+    if (callmebotApiKey) {
+      const callmebotUrl = `https://api.callmebot.com/whatsapp.php?phone=+${cleanPhone}&text=${encodedText}&apikey=${callmebotApiKey}`;
+      const res = await fetch(callmebotUrl);
+      if (res.ok) {
+        logEntry.status = "CALLMEBOT_SENT";
+        console.log(`[WhatsApp Bot Sent] Auto WhatsApp alert sent to +${cleanPhone}`);
+      }
+    }
+
+    // 2. Custom Webhook or UltraMsg / Twilio Gateway (if whatsappWebhookUrl configured)
+    const webhookUrl = process.env.WHATSAPP_WEBHOOK_URL || siteSettings.whatsappWebhookUrl;
+    if (webhookUrl) {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleanPhone, message: waText, order })
+      });
+      logEntry.status = "WEBHOOK_DISPATCHED";
+      console.log(`[WhatsApp Webhook Sent] Posted to ${webhookUrl}`);
+    }
+
+    console.log(`[WhatsApp Alert Generated] Direct Link: ${directWaUrl}`);
+  } catch (err: any) {
+    logEntry.status = "ERROR";
+    logEntry.error = err?.message || String(err);
+    console.error(`[WhatsApp Notification Error]:`, err);
+  }
+
+  notificationsLog.unshift(logEntry);
+  if (notificationsLog.length > 100) notificationsLog = notificationsLog.slice(0, 100);
+  saveJson(NOTIFICATIONS_FILE, notificationsLog);
+
+  return { directWaUrl, waText };
+}
 
 async function startServer() {
   const app = express();
@@ -300,7 +483,7 @@ Your task: Help the user understand the concepts in the book, answer questions a
   });
 
   // Order Creation & UPI Verification API
-  app.post("/api/orders/create", (req, res) => {
+  app.post("/api/orders/create", async (req, res) => {
     // Reload latest orders from disk
     ordersStore = loadJson(ORDERS_FILE, ordersStore);
 
@@ -359,7 +542,28 @@ Your task: Help the user understand the concepts in the book, answer questions a
 
     console.log(`[Order Saved] ${orderId} | Name: ${name} | Phone: ${phone} | Ref: ${transactionRef}`);
 
-    return res.json({ success: true, order });
+    // Trigger instant email notification & WhatsApp alert
+    sendOrderNotificationEmail(order).catch(err => {
+      console.error("[Email Notification Dispatch Error]:", err);
+    });
+
+    const waNoticePromise = sendOrderNotificationWhatsApp(order).catch(err => {
+      console.error("[WhatsApp Dispatch Error]:", err);
+      return null;
+    });
+
+    const waNotice = await waNoticePromise;
+
+    return res.json({ success: true, order, whatsappNotice: waNotice });
+  });
+
+  // Admin Notification Logs API
+  app.get("/api/admin/notifications", (req, res) => {
+    notificationsLog = loadJson(NOTIFICATIONS_FILE, notificationsLog);
+    res.json({
+      targetEmail: process.env.NOTIFICATION_EMAIL || siteSettings.notificationEmail || "arunprabhu@cbeschoolofdigitalgrowth.in",
+      logs: notificationsLog
+    });
   });
 
   // Vite middleware for dev or static serving for prod
