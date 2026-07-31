@@ -79,9 +79,10 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
       return;
     }
 
-    const finalUtr = utrNumber.trim() || ("UTR" + Math.floor(100000000000 + Math.random() * 900000000000));
-
     setIsProcessing(true);
+
+    const targetWaPhone = (whatsappPhone || "9787196806").replace(/\D/g, '');
+    const cleanWaPhone = targetWaPhone.length === 10 ? `91${targetWaPhone}` : targetWaPhone;
 
     const newOrder: Order = {
       orderId: "SSS-" + Math.floor(100000 + Math.random() * 900000),
@@ -96,16 +97,14 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
       carrier: "BlueDart Express",
       customer: { name, email, phone, address, city, pincode, state },
       payment: {
-        method: 'UPI_QR',
-        upiApp: 'UPI QR Payment',
+        method: 'WhatsApp Order',
+        upiApp: 'WhatsApp Order',
         upiId: merchantUpiId,
-        status: 'SUCCESS',
-        transactionRef: finalUtr
+        status: 'PENDING',
+        transactionRef: 'WhatsApp-' + cleanWaPhone
       },
       digitalAccessUrl: `/download/companion-blueprint-kit.pdf`
     };
-
-    setIsProcessing(true);
 
     // 1. Send complete order payload to server
     try {
@@ -118,10 +117,10 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
         city,
         state,
         pincode,
-        paymentMethod: 'UPI_QR',
+        paymentMethod: 'WhatsApp Order',
         upiId: merchantUpiId,
-        upiApp: 'UPI QR Payment',
-        transactionRef: finalUtr
+        upiApp: 'WhatsApp Order',
+        transactionRef: 'WhatsApp-' + cleanWaPhone
       };
 
       let response: Response | null = null;
@@ -160,6 +159,28 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
       setIsProcessing(false);
       setCompletedOrder(serverOrder);
       onOrderSuccess(serverOrder);
+
+      // Pre-formatted WhatsApp Message
+      const waText = `🛒 *NEW BOOK ORDER PLACED!*\n\n` +
+        `*Order ID:* ${serverOrder.orderId}\n` +
+        `*Book:* SEARCH, SOCIAL & SYSTEMS (Printed Paperback)\n` +
+        `*Amount Payable:* ₹${serverOrder.amount} (${serverOrder.shipping})\n\n` +
+        `👤 *CUSTOMER SHIPPING DETAILS:*\n` +
+        `• *Name:* ${name}\n` +
+        `• *Phone:* ${phone}\n` +
+        `• *Email:* ${email}\n` +
+        `• *Address:* ${address}, ${city}, ${state} - ${pincode}\n\n` +
+        `Please process my order and provide payment/courier details!`;
+
+      const waUrl = `https://wa.me/${cleanWaPhone}?text=${encodeURIComponent(waText)}`;
+
+      // Automatically redirect to WhatsApp
+      setTimeout(() => {
+        const opened = window.open(waUrl, '_blank');
+        if (!opened) {
+          window.location.href = waUrl;
+        }
+      }, 300);
 
       confetti({
         particleCount: 120,
@@ -381,94 +402,42 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
                 </div>
               </div>
 
-              {/* Payment Section Header - PURE UPI QR CODE ONLY */}
+              {/* Direct WhatsApp Confirmation Box */}
               <div className="pt-4 border-t border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-slate-900 font-serif flex items-center gap-2">
-                    <QrCode className="w-5 h-5 text-blue-600" /> 2. Pay via Instant UPI QR Code
-                  </h3>
-                  <span className="text-xs font-mono text-emerald-800 font-bold bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
-                    DIRECT MERCHANT UPI
-                  </span>
-                </div>
-
-                {/* Main QR Code & Merchant VPA Card */}
-                <div className="p-5 bg-gradient-to-br from-blue-50/80 to-slate-50 rounded-2xl border-2 border-blue-200 shadow-sm flex flex-col items-center text-center space-y-4">
-                  <div className="text-xs font-mono text-slate-700 font-bold bg-white px-3 py-1 rounded-full border border-blue-200 shadow-xs">
-                    Scan with GPay, PhonePe, Paytm, CRED or any UPI App:
-                  </div>
-                  
-                  {qrDataUrl ? (
-                    <div className="p-3.5 bg-white rounded-2xl shadow-xl border-4 border-blue-600 inline-block relative group">
-                      <img src={qrDataUrl} alt="Official Merchant UPI Payment QR Code" className="w-56 h-56 object-contain" />
-                      <div className="mt-2 text-[11px] font-mono font-bold text-slate-800 bg-slate-100 py-1 px-2 rounded">
-                        Payable Amount: <span className="text-blue-700 font-black text-xs">₹{totalPayable}</span>
-                      </div>
+                <div className="p-4 bg-emerald-50/90 rounded-2xl border-2 border-emerald-300 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">
+                      <MessageSquare className="w-4 h-4 fill-current" />
                     </div>
-                  ) : (
-                    <div className="w-56 h-56 bg-white border-2 border-dashed border-blue-300 rounded-2xl flex items-center justify-center text-xs text-slate-400 font-mono">
-                      Generating Live QR...
-                    </div>
-                  )}
-
-                  {/* VPA Details & Copy Action */}
-                  <div className="w-full max-w-md bg-white p-3.5 rounded-xl border border-blue-200 space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-mono">
-                      <span className="text-slate-600">Merchant UPI VPA ID:</span>
-                      <div className="flex items-center gap-2">
-                        <strong className="text-blue-950 font-bold font-mono bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{merchantUpiId}</strong>
-                        <button
-                          type="button"
-                          onClick={handleCopyUpi}
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-mono text-[11px] font-bold flex items-center gap-1 transition-colors"
-                          title="Copy UPI ID"
-                        >
-                          {copiedUpi ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy VPA</>}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] text-slate-500 font-sans border-t border-slate-100 pt-1.5 flex justify-between">
-                      <span>Book: <strong>₹{priceINR}</strong> + Shipping: <strong>₹{shippingFeeINR}</strong></span>
-                      <span className="text-emerald-700 font-bold">Total: ₹{totalPayable}</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-emerald-950 font-serif">
+                        Instant WhatsApp Order Confirmation
+                      </h4>
+                      <p className="text-[11px] text-emerald-800 font-mono">
+                        Direct Fulfillment with Author Arun Gowtham
+                      </p>
                     </div>
                   </div>
 
-                  {/* Easy 3-Step Instructions */}
-                  <div className="grid grid-cols-3 gap-2 w-full text-[11px] font-mono text-slate-600 text-left">
-                    <div className="p-2 bg-white rounded-lg border border-slate-200">
-                      <strong className="text-blue-700 block text-[10px]">STEP 1</strong>
-                      Open GPay / PhonePe / Paytm / CRED
-                    </div>
-                    <div className="p-2 bg-white rounded-lg border border-slate-200">
-                      <strong className="text-blue-700 block text-[10px]">STEP 2</strong>
-                      Scan QR Code above or copy VPA <span className="font-bold">{merchantUpiId}</span>
-                    </div>
-                    <div className="p-2 bg-white rounded-lg border border-slate-200">
-                      <strong className="text-blue-700 block text-[10px]">STEP 3</strong>
-                      Pay <strong className="text-slate-900">₹{totalPayable}</strong> &amp; note your 12-digit UTR ref
-                    </div>
-                  </div>
-                </div>
-
-                {/* UTR / Transaction Ref Input Box */}
-                <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-300 space-y-2">
-                  <label className="block text-slate-900 font-mono font-bold text-xs flex items-center justify-between">
-                    <span>UPI Transaction UTR / Ref No. (Optional / Recommended)</span>
-                    <span className="text-[10px] text-blue-800 font-bold bg-blue-100 px-2 py-0.5 rounded">12-Digit Ref from GPay/PhonePe</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={utrNumber}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    placeholder="e.g. 420192837412 (12-digit reference number)"
-                    className="w-full px-3.5 py-2.5 bg-white border border-blue-400 rounded-lg text-xs text-slate-900 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                  <p className="text-[11px] text-slate-600 font-sans">
-                    Entering your 12-digit UTR number speeds up instant dispatch verification for courier packing.
+                  <p className="text-xs text-slate-700 leading-relaxed font-sans">
+                    Once you click <strong>Confirm Order &amp; Open WhatsApp</strong>, your order will be instantly registered in our system and you will be automatically redirected to WhatsApp (<strong>+{whatsappPhone}</strong>) pre-filled with your shipping details!
                   </p>
-                </div>
 
+                  <div className="p-3 bg-white rounded-xl border border-emerald-200 text-xs space-y-1 font-mono">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Item:</span>
+                      <strong className="text-slate-900">Printed Paperback Edition</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Total Price:</span>
+                      <strong className="text-emerald-700">₹{totalPayable} ({shippingFeeINR > 0 ? `+₹${shippingFeeINR} Courier` : 'FREE Shipping'})</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Official Author WhatsApp:</span>
+                      <strong className="text-blue-700">+{whatsappPhone}</strong>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Submit CTA Button */}
@@ -480,11 +449,12 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
                 {isProcessing ? (
                   <span className="flex items-center gap-2 font-mono">
                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    Placing Order &amp; Verifying UPI...
+                    Creating Order &amp; Redirecting to WhatsApp...
                   </span>
                 ) : (
                   <>
-                    <span>I Have Paid • Confirm Order (₹{totalPayable})</span>
+                    <MessageSquare className="w-5 h-5 fill-current" />
+                    <span>Confirm Order &amp; Open WhatsApp (+91 {whatsappPhone})</span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
@@ -536,7 +506,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
                 <span className="text-slate-800">{completedOrder.item}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="text-slate-500">Amount Paid (UPI):</span>
+                <span className="text-slate-500">Amount Payable:</span>
                 <span className="text-emerald-700 font-bold">₹{completedOrder.amount} ({completedOrder.shipping})</span>
               </div>
               <div className="flex justify-between">

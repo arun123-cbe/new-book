@@ -203,17 +203,24 @@ Carrier: ${order.carrier}
   };
 
   try {
-    const smtpHost = process.env.SMTP_HOST || siteSettings.smtpHost;
+    const smtpHost = process.env.SMTP_HOST || siteSettings.smtpHost || "smtp.hostinger.com";
     const smtpUser = process.env.SMTP_USER || siteSettings.smtpUser;
     const smtpPass = process.env.SMTP_PASS || siteSettings.smtpPass;
     const smtpPort = Number(process.env.SMTP_PORT || siteSettings.smtpPort || 465);
 
     if (smtpHost && smtpUser && smtpPass) {
+      const isPort465 = smtpPort === 465;
       const transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: smtpPort === 465,
-        auth: { user: smtpUser, pass: smtpPass }
+        secure: isPort465,
+        auth: { user: smtpUser, pass: smtpPass },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
       });
 
       await transporter.sendMail({
@@ -224,10 +231,11 @@ Carrier: ${order.carrier}
         html: htmlBody
       });
       logEntry.status = "EMAIL_DELIVERED_SMTP";
-      console.log(`[Order Email Sent] Successfully sent order alert to ${targetEmail} via SMTP.`);
+      console.log(`[Order Email Sent] Successfully sent order alert to ${targetEmail} via Hostinger SMTP.`);
     } else {
-      logEntry.status = "LOGGED_ALERT_READY";
-      console.log(`[Order Notification Triggered] Target: ${targetEmail}`);
+      logEntry.status = "NO_SMTP_CREDENTIALS";
+      logEntry.error = "Hostinger Email or Password not entered in Admin Settings. Please fill in Email & Password in Admin Settings to receive live email alerts.";
+      console.log(`[Order Notification Logged] Target: ${targetEmail} (Hostinger Email/Password not configured in Admin Settings)`);
       console.log(`[Order Details Summary]\nOrder ID: ${order.orderId}\nName: ${order.customer?.name}\nPhone: ${order.customer?.phone}\nAddress: ${order.customer?.address}, ${order.customer?.city}\nRef: ${order.payment?.transactionRef}`);
     }
   } catch (err: any) {
@@ -564,6 +572,57 @@ Your task: Help the user understand the concepts in the book, answer questions a
       targetEmail: process.env.NOTIFICATION_EMAIL || siteSettings.notificationEmail || "arunprabhu@cbeschoolofdigitalgrowth.in",
       logs: notificationsLog
     });
+  });
+
+  // Admin Test Email SMTP Endpoint
+  app.post("/api/admin/test-email", async (req, res) => {
+    const { smtpHost, smtpPort, smtpUser, smtpPass, targetEmail } = req.body || {};
+    const host = smtpHost || process.env.SMTP_HOST || siteSettings.smtpHost || "smtp.hostinger.com";
+    const user = smtpUser || process.env.SMTP_USER || siteSettings.smtpUser;
+    const pass = smtpPass || process.env.SMTP_PASS || siteSettings.smtpPass;
+    const port = Number(smtpPort || process.env.SMTP_PORT || siteSettings.smtpPort || 465);
+    const to = targetEmail || process.env.NOTIFICATION_EMAIL || siteSettings.notificationEmail || "arunprabhu@cbeschoolofdigitalgrowth.in";
+
+    if (!user || !pass) {
+      return res.status(400).json({
+        success: false,
+        error: "Please fill in Hostinger Email Address and Password in Admin Settings before sending test email."
+      });
+    }
+
+    try {
+      const isPort465 = port === 465;
+      const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: isPort465,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
+      });
+
+      await transporter.sendMail({
+        from: `"Search Social Systems Test" <${user}>`,
+        to,
+        subject: "✅ [TEST ALERT] Hostinger SMTP Email Notification Working!",
+        text: `This is a test notification email from your Search, Social & Systems book store website. Hostinger SMTP configured successfully for ${user}!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 550px; margin: 0 auto; padding: 20px; border: 1px solid #3b82f6; border-radius: 12px; background-color: #ffffff;">
+          <h2 style="color: #1e3a8a; margin-top: 0;">✅ Hostinger SMTP Test Successful!</h2>
+          <p style="font-size: 14px; color: #334155; line-height: 1.5;">Your book store website is now successfully connected to Hostinger SMTP (<strong>${user}</strong>).</p>
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px; font-size: 13px; color: #166534; font-family: monospace;">
+            Every new order placed on your website will automatically send an instant order email to <strong>${to}</strong>.
+          </div>
+          <p style="color: #94a3b8; font-size: 11px; margin-top: 20px;">Sent at ${new Date().toLocaleString('en-IN')}</p>
+        </div>`
+      });
+
+      return res.json({ success: true, message: `Test email successfully sent to ${to}!` });
+    } catch (err: any) {
+      console.error("[Test Email SMTP Error]:", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to send SMTP email." });
+    }
   });
 
   // Vite middleware for dev or static serving for prod

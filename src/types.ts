@@ -110,6 +110,15 @@ export interface SiteContentSettings {
   tagline: string;
   announcementText: string;
 
+  // Notification & SMTP Settings
+  notificationEmail?: string;
+  smtpHost?: string;
+  smtpPort?: string;
+  smtpUser?: string;
+  smtpPass?: string;
+  callmebotApiKey?: string;
+  whatsappWebhookUrl?: string;
+
   // Editable lists across the site
   chapters?: Chapter[];
   reviews?: Review[];
