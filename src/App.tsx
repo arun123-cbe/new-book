@@ -16,6 +16,7 @@ import { OrderTrackModal } from './components/OrderTrackModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
 import { Chapter, Order, SiteContentSettings } from './types';
 import { subscribeToFirebaseSettings } from './lib/firebase';
+import { initAnalytics, trackPageView } from './lib/analytics';
 
 export default function App() {
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -51,6 +52,15 @@ export default function App() {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    initAnalytics({
+      gaMeasurementId: siteSettings?.gaMeasurementId,
+      gtmContainerId: siteSettings?.gtmContainerId,
+      enableAnalytics: siteSettings?.enableAnalytics !== false
+    });
+    trackPageView('SEARCH, SOCIAL & SYSTEMS - Official Book', window.location.pathname);
+  }, [siteSettings]);
 
   const scrollToCheckout = () => {
     const el = document.getElementById('buy-now');

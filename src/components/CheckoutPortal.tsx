@@ -8,6 +8,7 @@ import {
 import { BOOK_METADATA } from '../data/bookData';
 import { Order, SiteContentSettings } from '../types';
 import { saveOrderToFirebase } from '../lib/firebase';
+import { trackPurchase, trackBeginCheckout } from '../lib/analytics';
 
 interface CheckoutPortalProps {
   onOrderSuccess: (order: Order) => void;
@@ -81,6 +82,7 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
     }
 
     setIsProcessing(true);
+    trackBeginCheckout(totalPayable);
 
     const targetWaPhone = (whatsappPhone || "9787196806").replace(/\D/g, '');
     const cleanWaPhone = targetWaPhone.length === 10 ? `91${targetWaPhone}` : targetWaPhone;
@@ -161,6 +163,13 @@ export const CheckoutPortal: React.FC<CheckoutPortalProps> = ({ onOrderSuccess, 
       setIsProcessing(false);
       setCompletedOrder(serverOrder);
       onOrderSuccess(serverOrder);
+
+      // Fire Google Analytics & GTM Purchase Event
+      try {
+        trackPurchase(serverOrder);
+      } catch (trackErr) {
+        console.warn("Analytics tracking error:", trackErr);
+      }
 
       // Pre-formatted WhatsApp Message
       const waText = `🛒 *NEW BOOK ORDER PLACED!*\n\n` +

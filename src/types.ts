@@ -8,7 +8,7 @@ export interface Chapter {
   focusTag: string;
   focus: string;
   coreSkills: string[];
-  toolkitTemplates: string[];
+  toolkitTemplates?: string[];
   summary: string;
   sampleExcerpt?: string;
   estimatedReadMinutes?: number;
@@ -62,7 +62,7 @@ export interface OrderCustomer {
 }
 
 export interface UPIPaymentDetails {
-  method: 'UPI_APP' | 'UPI_QR' | 'UPI_ID';
+  method: 'UPI_APP' | 'UPI_QR' | 'UPI_ID' | 'WhatsApp Order' | string;
   upiApp?: string;
   upiId?: string;
   status: 'PENDING' | 'SUCCESS' | 'FAILED';
@@ -118,6 +118,11 @@ export interface SiteContentSettings {
   smtpPass?: string;
   callmebotApiKey?: string;
   whatsappWebhookUrl?: string;
+
+  // Google Analytics & Google Tag Manager Settings
+  gaMeasurementId?: string;
+  gtmContainerId?: string;
+  enableAnalytics?: boolean;
 
   // Editable lists across the site
   chapters?: Chapter[];
